@@ -51,22 +51,24 @@ data class AppState(
     var round by roundState; private set
 
     fun show(block: StatBlock? = null) {
-        active = block ?: active ?: statBlocks.first()
+        activate(block)
         page = Page.Show(active!!)
     }
 
     fun edit(block: StatBlock? = null) {
-        active = block ?: active ?: statBlocks.first()
+        activate(block)
         page = Page.Edit(active!!)
     }
 
-    fun new() = add(StatBlock(""))
-
-    private fun add(statBlock: StatBlock) {
-        statBlocks.insert(statBlock, order.comparator)
-        active = statBlock
-        page = Page.Edit(statBlock)
+    fun navigateTo(block: StatBlock) {
+        when (page) {
+            null, is Page.Show -> show(block)
+            is Page.Edit -> show(block) // FIXME
+            else -> activate(block)
+        }
     }
+
+    fun new() = add(StatBlock(""))
 
     fun update(statBlock: StatBlock) {
         forUpdateState.value = statBlock
@@ -76,10 +78,9 @@ data class AppState(
         forUpdateState.value?.let {
             statBlocks[statBlocks.indexOf(active)] = it
             statBlocks.sortWith(order.comparator)
-            active = it
+            show(it)
             save()
         }
-        show()
         forUpdateState.value = null
     }
 
@@ -92,6 +93,20 @@ data class AppState(
         active = null
         page = null
         save()
+    }
+
+    private fun add(statBlock: StatBlock) {
+        statBlocks.insert(statBlock, order.comparator)
+        activate(statBlock)
+        page = Page.Edit(statBlock)
+    }
+
+    private fun activate(block: StatBlock?) {
+        active = block ?: active ?: statBlocks.first()
+    }
+
+    fun toOverview() {
+        page = Page.Overview
     }
 
     fun toPrepareCombat() {

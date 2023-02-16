@@ -38,6 +38,7 @@ fun CombatHelper() {
             when (page) {
                 is Page.Show -> ReadonlySheet(page.statBlock, modifier.padding(8.dp))
                 is Page.Edit -> EditableSheet(page.statBlock, state, modifier)
+                Page.Overview -> OverviewPage(state, modifier)
                 Page.PrepareCombat -> PrepareCombatPage(state, modifier)
                 Page.Combat -> CombatPage(state, modifier)
                 else -> Spacer(modifier)
@@ -55,6 +56,7 @@ private fun TitleBar(state: AppState) {
         null -> ""
         is Page.Show -> " — ${page.statBlock.name}"
         is Page.Edit -> " — Edit ${page.statBlock.name}"
+        Page.Overview -> " — Overview"
         Page.PrepareCombat -> " — Prepare combat"
         Page.Combat -> " — Combat"
     }
@@ -63,8 +65,9 @@ private fun TitleBar(state: AppState) {
             val none = page == null
             val show = page is Page.Show
             val edit = page is Page.Edit
-            val prepareCombat = page is Page.PrepareCombat
-            val combat = page is Page.Combat
+            val overview = page == Page.Overview
+            val prepareCombat = page == Page.PrepareCombat
+            val combat = page == Page.Combat
             BarButton(Icons.Default.KeyboardArrowUp, combat) { state.previousInitiative() }
             BarButton(Icons.Default.KeyboardArrowDown, combat) { state.nextInitiative() }
             BarButton(Icons.Default.Shield, none || show) { state.toCombat() }
@@ -73,6 +76,7 @@ private fun TitleBar(state: AppState) {
             BarButton(Icons.Default.Start, prepareCombat) { state.startCombat() }
             BarButton(Icons.Default.Visibility, !show) { state.show() }
             BarButton(Icons.Default.Edit, !edit) { state.edit() }
+            BarButton(Icons.Default.GridView, !overview) { state.toOverview() }
             BarButton(Icons.Default.Save, none || show) { state.save() }
             BarButton(Icons.Default.Save, edit) { state.saveUpdated() }
             BarButton(Icons.Default.FileCopy, show || edit) { state.copyCurrent() }

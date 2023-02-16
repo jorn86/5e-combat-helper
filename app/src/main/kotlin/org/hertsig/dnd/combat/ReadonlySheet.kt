@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,10 +23,11 @@ import org.hertsig.compose.component.TextLine
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
-import org.hertsig.compose.modifier
 import org.hertsig.core.error
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.*
+import org.hertsig.dnd.component.displayForEach
+import org.hertsig.dnd.component.modifier
 import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.d
 
@@ -69,9 +69,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 TraitLine("Damage resistances", statBlock.damageResistances, singleLine = false)
                 TraitLine("Speed", statBlock.speed, singleLine = false)
 
-                val pp = "Passive perception ${ 10 + statBlock.modifierFor(Skill.PERCEPTION) }"
-                val senses = if (statBlock.senses.isBlank()) pp else "${statBlock.senses}, ${pp.lowercase()}"
-                TraitLine("Senses", senses, singleLine = false)
+                TraitLine("Senses", statBlock.displaySenses(), singleLine = false)
 
                 TraitLine("Languages", statBlock.languages)
                 TraitLine("Caster level", "${statBlock.casterLevel.display} (${statBlock.casterAbility.display})",
@@ -79,11 +77,8 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 FlowRow {
                     val allSkills = statBlock.allSkills
                     TraitLine("Skills", visible = allSkills.isNotEmpty())
-                    allSkills.forEachIndexed { index, it ->
-                        val modifier = statBlock.modifierFor(it)
-                        var text = "${it.display} (${modifier(modifier)})"
-                        if (index + 1 < allSkills.size) text += ", "
-                        Roller(text, (1 d 20) + modifier, statBlock.name)
+                    allSkills.displayForEach({ " ${it.display} (${modifier(statBlock.modifierFor(it))})"}) { text, it ->
+                        Roller(text, (1 d 20) + statBlock.modifierFor(it), statBlock.name)
                     }
                 }
             }
@@ -221,29 +216,6 @@ private fun Legendary(statBlock: StatBlock, ability: LegendaryAbility) {
 }
 
 @Composable
-private fun TraitLine(
-    name: String,
-    text: String = "",
-    modifier: Modifier = Modifier,
-    style: TextStyle = LocalTextStyle.current,
-    singleLine: Boolean = true,
-    visible: Boolean = text.isNotBlank()
-) {
-    if (visible) {
-        val builder = AnnotatedString.Builder()
-        builder.pushStyle(style.toSpanStyle().copy(fontWeight = FontWeight.Bold))
-        builder.append("$name: ")
-        builder.pop()
-        builder.append(text)
-        if (singleLine) {
-            TextLine(builder.toAnnotatedString(), modifier)
-        } else {
-            Text(builder.toAnnotatedString(), modifier)
-        }
-    }
-}
-
-@Composable
 private fun AttackRoller(
     name: String,
     type: String,
@@ -264,4 +236,9 @@ private fun AttackRoller(
         TextLine("$rangeText, $target. ", style = style)
         Roller("Hit: $damage damage", damage, creatureName, "$name: ${damage.type} damage", style, false)
     }
+}
+
+private fun StatBlock.displaySenses(): String {
+    val pp = "Passive perception ${ 10 + modifierFor(Skill.PERCEPTION) }"
+    return if (senses.isBlank()) pp else "$senses, ${pp.lowercase()}"
 }

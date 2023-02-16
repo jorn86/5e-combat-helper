@@ -35,7 +35,7 @@ fun StatBlockList(state: AppState) {
                 val isCurrent by remember { derivedStateOf { it == state.active } }
                 val backgroundColor by remember { derivedStateOf { if (isCurrent) colors.primary else colors.secondary } }
                 Button(
-                    { state.show(it) },
+                    { state.navigateTo(it) },
                     Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(backgroundColor),
                 ) {

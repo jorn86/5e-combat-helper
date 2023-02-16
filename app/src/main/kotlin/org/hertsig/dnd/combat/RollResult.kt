@@ -18,8 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.hertsig.compose.component.RowTextLine
 import org.hertsig.compose.component.TextLine
-import org.hertsig.compose.modifier
 import org.hertsig.dnd.component.DiceShapes
+import org.hertsig.dnd.component.modifier
 import org.hertsig.dnd.dice.DieRoll
 import org.hertsig.dnd.dice.DieRolls
 
