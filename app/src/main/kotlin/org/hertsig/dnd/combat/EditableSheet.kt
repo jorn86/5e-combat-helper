@@ -2,7 +2,6 @@ package org.hertsig.dnd.combat
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
-import androidx.compose.material.CursorDropdownMenu
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
@@ -16,13 +15,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mu.KotlinLogging
+import com.google.accompanist.flowlayout.FlowRow
+import org.hertsig.compose.autoFocus
+import org.hertsig.compose.component.*
+import org.hertsig.compose.component.flow.ScrollableFlowColumn
+import org.hertsig.compose.display
+import org.hertsig.core.error
+import org.hertsig.core.logger
+import org.hertsig.core.warn
 import org.hertsig.dnd.combat.dto.*
-import org.hertsig.dnd.component.*
 import org.hertsig.dnd.dice.Dice
 import java.util.*
 
-private val log = KotlinLogging.logger {}
+private val log = logger {}
 
 @Composable
 fun EditableSheet(statBlock: StatBlock, state: AppState, modifier: Modifier = Modifier) {
@@ -72,14 +77,14 @@ fun EditableSheet(statBlock: StatBlock, state: AppState, modifier: Modifier = Mo
 
         ScrollableFlowColumn(16.dp, 16.dp) {
             Column(Modifier.padding(bottom = 16.dp), Arrangement.spacedBy(4.dp)) {
-                FormRow("Name") { EditText(name, Modifier.weight(1f).autoFocus()) { save() } }
-                FormRow("Size") { DropDown(size, Modifier.weight(1f), onUpdate = { save() }) }
-                FormRow("Type") { EditText(type, Modifier.weight(1f)) { save() } }
+                FormRow("Name") { BasicEditText(name, Modifier.weight(1f).autoFocus()) { save() } }
+                FormRow("Size") { BasicDropdown(size, Modifier.weight(1f), onUpdate = { save() }) }
+                FormRow("Type") { BasicEditText(type, Modifier.weight(1f)) { save() } }
                 FormRow("Challenge rating") {
-                    DropDown(challengeRating, Modifier.width(40.dp), TextAlign.End, TextAlign.Center, { proficiencyBonus.value = it.proficiencyBonus; save() }) { it.display }
+                    BasicDropdown(challengeRating, Modifier.width(40.dp), TextAlign.End, TextAlign.Center, { proficiencyBonus.value = it.proficiencyBonus; save() }) { it.display }
                     RowTextLine("(${challengeRating.value.xp} XP)")
                 }
-                FormRow("Proficiency bonus") { EditNumber(proficiencyBonus, 2, 9) { save() } }
+                FormRow("Proficiency bonus") { BasicEditNumber(proficiencyBonus, 2, 9) { save() } }
                 FormRow("Abilities") {
                     FlowRow(mainAxisSpacing = 2.dp, crossAxisSpacing = 2.dp) {
                         EditAbilityScore("Strength", strength, ::save)
@@ -90,21 +95,21 @@ fun EditableSheet(statBlock: StatBlock, state: AppState, modifier: Modifier = Mo
                         EditAbilityScore("Charisma", charisma, ::save)
                     }
                 }
-                FormRow("Armor class") { EditText(armorClass, Modifier.weight(1f)) { save() } }
-                FormRow("Hit points") { EditNumber(maxHitPoints, 1, 999, 1, 40.dp) { save() } }
-                FormRow("Condition immunities") { EditText(conditionImmunities, Modifier.weight(1f)) { save() } }
-                FormRow("Damage immunities") { EditText(damageImmunities, Modifier.weight(1f)) { save() } }
-                FormRow("Damage resistances") { EditText(damageResistances, Modifier.weight(1f)) { save() } }
-                FormRow("Speed") { EditText(speed, Modifier.weight(1f)) { save() } }
-                FormRow("Senses") { EditText(senses, Modifier.weight(1f)) { save() } }
-                FormRow("Languages") { EditText(languages, Modifier.weight(1f)) { save() } }
+                FormRow("Armor class") { BasicEditText(armorClass, Modifier.weight(1f)) { save() } }
+                FormRow("Hit points") { BasicEditNumber(maxHitPoints, 1, 999, 1, 40.dp) { save() } }
+                FormRow("Condition immunities") { BasicEditText(conditionImmunities, Modifier.weight(1f)) { save() } }
+                FormRow("Damage immunities") { BasicEditText(damageImmunities, Modifier.weight(1f)) { save() } }
+                FormRow("Damage resistances") { BasicEditText(damageResistances, Modifier.weight(1f)) { save() } }
+                FormRow("Speed") { BasicEditText(speed, Modifier.weight(1f)) { save() } }
+                FormRow("Senses") { BasicEditText(senses, Modifier.weight(1f)) { save() } }
+                FormRow("Languages") { BasicEditText(languages, Modifier.weight(1f)) { save() } }
                 FormRow("Spellcasting") {
-                    DropDown(casterLevel, Modifier.width(30.dp), onUpdate = { save() }) { it.display }
+                    BasicDropdown(casterLevel, Modifier.width(30.dp), onUpdate = { save() }) { it.display }
                     if (casterLevel.value != CasterLevel.NONE)
-                        DropDown(casterAbility, Modifier.width(100.dp), onUpdate = { save() })
+                        BasicDropdown(casterAbility, Modifier.width(100.dp), onUpdate = { save() })
                 }
                 if (legendaryActions.isNotEmpty())
-                    FormRow("Legendary actions") { EditNumber(legendaryActionUses, 0, 5) { save() } }
+                    FormRow("Legendary actions") { BasicEditNumber(legendaryActionUses, max = 5) { save() } }
 
                 ProficiencyBlock("Saving throws", proficientSaves, ::save)
                 ProficiencyBlock("Proficient skills", proficientSkills, ::save)
@@ -124,12 +129,23 @@ fun EditableSheet(statBlock: StatBlock, state: AppState, modifier: Modifier = Mo
 private inline fun <reified E: Enum<E>> ProficiencyBlock(
     label: String,
     proficiencies: SnapshotStateList<E>,
-    crossinline save: () -> Unit,
-    crossinline display: (E) -> String = { it.display }
+    noinline save: () -> Unit,
+    noinline display: (E) -> String = { it.display }
 ) {
-    val values = enumValues<E>().asList()
+    ProficiencyBlock(enumValues<E>().asList(), label, proficiencies, save, display)
+}
+
+@Composable
+private fun <E: Enum<E>> ProficiencyBlock(
+    values: List<E>,
+    label: String,
+    proficiencies: SnapshotStateList<E>,
+    save: () -> Unit,
+    display: (E) -> String = { it.display }
+) {
     val missingValues = values - proficiencies
-    var show by remember { mutableStateOf(false) }
+    val showState = remember { mutableStateOf(false) }
+    var show by showState
     FormRow(label) {
         FlowRow {
             proficiencies.forEach {
@@ -140,11 +156,7 @@ private inline fun <reified E: Enum<E>> ProficiencyBlock(
             }
 
             IconButton({ show = true }, Icons.Default.Add, iconSize = 16.dp)
-            CursorDropdownMenu(show, { show = false }) {
-                missingValues.forEach {
-                    Item(display(it)) { proficiencies.add(it); save() }
-                }
-            }
+            DropdownMenu(showState, missingValues, display) { proficiencies.add(it); save() }
         }
     }
 }
@@ -161,7 +173,7 @@ private fun FormRow(label: String, content: @Composable RowScope.() -> Unit) {
 private fun EditAbilityScore(ability: String, state: MutableState<Int>, save: () -> Unit) {
     Row(horizontalArrangement = Arrangement.SpaceBetween) {
         RowTextLine(ability, Modifier.width(90.dp)) // FIXME width is hack until we can properly table-layout this
-        EditNumber(state, 0, 40) { save() }
+        BasicEditNumber(state, max = 40) { save() }
     }
 }
 
@@ -207,7 +219,7 @@ private fun EditSingleAbility(ability: Ability, abilities: SnapshotStateList<Abi
             require(legendaryUses == 0) { "Nested legendary: $ability" }
             EditLegendary(abilities, ability, save)
         }
-        else -> log.error("No renderer for $ability")
+        else -> log.error{"No renderer for $ability"}
     }
 }
 
@@ -222,7 +234,7 @@ private fun EditTrait(abilities: SnapshotStateList<Ability>, trait: Ability.Trai
         save()
     }
     EditAbility(trait, name, use, { n, l, u -> update(n = n, l = l, u = u) }, abilities, save, legendary, false) {
-        EditText(description, Modifier.fillMaxWidth(), "Description") { update(d = it) }
+        BasicEditText(description, Modifier.fillMaxWidth(), "Description") { update(d = it) }
     }
 }
 
@@ -242,10 +254,10 @@ private fun EditMeleeAttack(abilities: SnapshotStateList<Ability>, attack: Abili
         save()
     }
     EditAbility(attack, name, use, { n, l, u -> update(n = n, l = l, u = u) }, abilities, save, legendary) {
-        DropDown(stat, listOf(null, Stat.STRENGTH, Stat.DEXTERITY), Modifier.width(90.dp), onUpdate = { update(s = it) }) { it?.display ?: "Custom" }
-        EditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { update(m = it) }
+        BasicDropdown(stat, listOf(null, Stat.STRENGTH, Stat.DEXTERITY), Modifier.width(90.dp), onUpdate = { update(s = it) }) { it?.display ?: "Custom" }
+        BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { update(m = it) }
         TextLine("Reach")
-        EditNumber(reach, 0, 20, 5, 36.dp, "ft.") { update(r = it) }
+        BasicEditNumber(reach, 0, 25, 5, 36.dp, "ft.") { update(r = it) }
         EditDamage(damage.value) {
             if (it != null) {
                 damage.value = it
@@ -272,12 +284,12 @@ private fun EditRangedAttack(abilities: SnapshotStateList<Ability>, attack: Abil
         save()
     }
     EditAbility(attack, name, use, { n, l, u -> update(n = n, l = l, u = u) }, abilities, save, legendary) {
-        DropDown(stat, listOf(null, Stat.STRENGTH, Stat.DEXTERITY), Modifier.width(90.dp), onUpdate = { update(s = it) }) { it?.display ?: "Custom" }
-        EditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { update(m = it) }
+        BasicDropdown(stat, listOf(null, Stat.STRENGTH, Stat.DEXTERITY), Modifier.width(90.dp), onUpdate = { update(s = it) }) { it?.display ?: "Custom" }
+        BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { update(m = it) }
         TextLine("Range")
-        EditNumber(range, 10, 300, 5, 36.dp, "ft.") { update(r = it) }
+        BasicEditNumber(range, 10, 300, 5, 36.dp, "ft.") { update(r = it) }
         TextLine("/")
-        EditNumber(longRange, 10, 600, 5, 36.dp, "ft.") { update(lr = it) }
+        BasicEditNumber(longRange, 10, 600, 5, 36.dp, "ft.") { update(lr = it) }
         EditDamage(damage.value) {
             if (it != null) {
                 damage.value = it
@@ -301,9 +313,9 @@ private fun EditCustom(abilities: SnapshotStateList<Ability>, ability: Ability.C
         save()
     }
     EditAbility(ability, name, use, { n, l, u -> update(n = n, l = l, u = u) }, abilities, save, legendary) {
-        DropDown(recharge, Modifier.width(30.dp), onUpdate = { update(rc = it) }) { it.display }
+        BasicDropdown(recharge, Modifier.width(30.dp), onUpdate = { update(rc = it) }) { it.display }
         EditDamage(ability.roll) { update(r = it) }
-        EditText(description, Modifier.fillMaxWidth(), "Description") { update(d = it) }
+        BasicEditText(description, Modifier.fillMaxWidth(), "Description") { update(d = it) }
     }
 }
 
@@ -327,9 +339,9 @@ private fun EditAbility(
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         @Composable fun innerContent() {
             val modifier = if (name.value.isBlank()) Modifier.autoFocus() else Modifier
-            EditText(name, modifier.width(100.dp), "Name") { onUpdate(it, legendary.value, use.value) }
+            BasicEditText(name, modifier.width(100.dp), "Name") { onUpdate(it, legendary.value, use.value) }
             if (legendary.value > 0) {
-                EditNumber(legendary, 1, 5) { onUpdate(name.value, it, use.value) }
+                BasicEditNumber(legendary, 1, 5) { onUpdate(name.value, it, use.value) }
             } else {
                 EditUse(use) { onUpdate(name.value, legendary.value, it) }
             }
@@ -341,7 +353,10 @@ private fun EditAbility(
         } else {
             Row(Modifier.weight(1f), Arrangement.spacedBy(4.dp)) { innerContent() }
         }
-        IconButton({ traits.remove(ability); save() }, Icons.Default.Close, iconSize = 16.dp)
+        IconButton({
+            traits.removeIf { it == ability || it is LegendaryAbility && it.ability == ability }
+            save()
+        }, Icons.Default.Close, iconSize = 16.dp)
     }
 }
 
@@ -349,7 +364,7 @@ private fun EditAbility(
 private fun EditDamage(initial: Dice?, modifier: Modifier = Modifier, width: Dp = 200.dp, onUpdate: (Dice?) -> Unit) {
     val display = remember { mutableStateOf(initial?.asString(false).orEmpty()) }
     var error by remember { mutableStateOf(false) }
-    EditText(display, modifier.width(width), "Damage") {
+    BasicEditText(display, modifier.width(width), "Damage") {
         error = try {
             onUpdate(Dice.parseOptional(it))
             false
@@ -366,8 +381,8 @@ private fun EditUse(use: MutableState<Use>, onUpdate: (Use) -> Unit) {
     val type = remember(use.value) { mutableStateOf(use.value.reset) }
     fun create(amount: Int, type: String) = if (type == "unlimited") Use.Unlimited else Use.Limited(amount, type)
     if (type.value != "unlimited")
-        EditNumber(amount, 0, 5, suffix = "/") { onUpdate(create(it, type.value)) }
-    DropDown(type, listOf("unlimited", "short rest", "long rest", "day"), Modifier.width(70.dp),
+        BasicEditNumber(amount, max = 5, suffix = "/") { onUpdate(create(it, type.value)) }
+    BasicDropdown(type, listOf("unlimited", "short rest", "long rest", "day"), Modifier.width(70.dp),
         onUpdate = { onUpdate(create(amount.value, it)) })
 }
 
@@ -378,7 +393,7 @@ private fun update(abilities: MutableList<Ability>, old: Ability, new: Ability, 
     var currentIndex = abilities.indexOf(old)
     if (currentIndex < 0) currentIndex = abilities.indexOfFirst { it is LegendaryAbility && it.ability == old }
     if (currentIndex < 0) {
-        log.warn("Invalid index $currentIndex in ${abilities.joinToString(", ", "[", "]") { it.name }}")
+        log.warn { "Invalid index $currentIndex in ${abilities.joinToString(", ", "[", "]") { it.name }}" }
         return
     }
     abilities[currentIndex] = if (legendaryUses > 0) LegendaryAbility(new, legendaryUses) else new

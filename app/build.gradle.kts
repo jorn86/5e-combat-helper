@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     api(project(":core"))
+    api(project(":compose-library"))
 
     implementation(compose.desktop.currentOs)
     implementation(compose.materialIconsExtended)

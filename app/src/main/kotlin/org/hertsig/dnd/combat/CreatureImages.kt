@@ -7,12 +7,14 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import mu.KotlinLogging
+import org.hertsig.core.debug
+import org.hertsig.core.logger
+import org.hertsig.core.trace
 import org.hertsig.dnd.combat.dto.StatBlock
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 
-private val log = KotlinLogging.logger {}
+private val log = logger {}
 
 suspend fun StatBlock.image() = imageFor(name)
 suspend fun imageFor(creatureName: String) = withContext(Dispatchers.IO) {
@@ -33,8 +35,8 @@ private object ImageLoader : CacheLoader<String, Optional<ImageBitmap>>() {
             return Optional.absent()
         }
 
-        val imageFile = Path(folder).absolute().walk()
-            .firstOrNull { it.fileName.toString().equals("$creatureName.png", true) }
+        val realFolder = Path(folder).absolute()
+        val imageFile = realFolder.walk().firstOrNull { it.fileName.toString().equals("$creatureName.png", true) }
         return if (imageFile == null) {
             log.debug { "Image file for $creatureName not found in $folder" }
             Optional.absent()

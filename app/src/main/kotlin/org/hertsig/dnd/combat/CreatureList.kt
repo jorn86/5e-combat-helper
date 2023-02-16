@@ -11,17 +11,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.hertsig.compose.component.BasicDropdown
+import org.hertsig.compose.component.RowTextLine
+import org.hertsig.compose.component.ScrollableColumn
 import org.hertsig.dnd.combat.dto.AppState
 import org.hertsig.dnd.combat.dto.ChallengeRating
 import org.hertsig.dnd.combat.dto.StatBlock
-import org.hertsig.dnd.component.DropDown
-import org.hertsig.dnd.component.RowTextLine
-import org.hertsig.dnd.component.ScrollableColumn
 
 @Composable
 fun StatBlockList(state: AppState) {
     Column(Modifier.width(250.dp).padding(8.dp, 8.dp, 12.dp, 8.dp), Arrangement.spacedBy(4.dp)) {
-        DropDown(state.orderState, Modifier.weight(1f))
+        BasicDropdown(state.orderState, Modifier.weight(1f))
         Button(
             { state.new() },
             Modifier.fillMaxWidth(),

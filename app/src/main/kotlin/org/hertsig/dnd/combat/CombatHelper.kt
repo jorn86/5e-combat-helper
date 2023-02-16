@@ -11,11 +11,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import org.hertsig.compose.component.IconButton
+import org.hertsig.compose.component.TextLine
+import org.hertsig.compose.component.VerticalDivider
 import org.hertsig.dnd.combat.dto.AppState
 import org.hertsig.dnd.combat.dto.rememberAppState
-import org.hertsig.dnd.component.IconButton
-import org.hertsig.dnd.component.TextLine
-import org.hertsig.dnd.component.VerticalDivider
 import org.hertsig.dnd.dice.Dice
 
 @Composable

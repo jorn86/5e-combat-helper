@@ -16,10 +16,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.hertsig.dnd.component.RowTextLine
-import org.hertsig.dnd.component.Shapes
-import org.hertsig.dnd.component.TextLine
-import org.hertsig.dnd.component.modifier
+import org.hertsig.compose.component.RowTextLine
+import org.hertsig.compose.component.TextLine
+import org.hertsig.compose.modifier
+import org.hertsig.dnd.component.DiceShapes
 import org.hertsig.dnd.dice.DieRoll
 import org.hertsig.dnd.dice.DieRolls
 
@@ -51,12 +51,18 @@ fun RowScope.RollResult(
 @Composable
 private fun Die(roll: DieRoll, size: Int) {
     val icon = when (size) {
-        4 -> Shapes.D4
-        6 -> Shapes.D6
-        8 -> Shapes.D8
-        10 -> Shapes.D10
-        12 -> Shapes.D12
-        20 -> Shapes.D20
+//        4 -> Polygon(3, 30f)
+//        6 -> Polygon(4, 45f)
+//        8 -> Polygon(4)
+//        10 -> Shapes.D10
+//        12 -> Polygon(5, 54f)
+//        20 -> Polygon(6, 30f)
+        4 -> DiceShapes.D4
+        6 -> DiceShapes.D6
+        8 -> DiceShapes.D8
+        10 -> DiceShapes.D10
+        12 -> DiceShapes.D12
+        20 -> DiceShapes.D20
         else -> null
     }
     val color = when (roll.result) {

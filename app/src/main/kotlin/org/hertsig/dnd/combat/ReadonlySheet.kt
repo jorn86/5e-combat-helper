@@ -17,13 +17,21 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import mu.KotlinLogging
+import com.google.accompanist.flowlayout.FlowRow
+import org.hertsig.compose.component.HorizontalDivider
+import org.hertsig.compose.component.RowTextLine
+import org.hertsig.compose.component.TextLine
+import org.hertsig.compose.component.flow.ReorderStrategy
+import org.hertsig.compose.component.flow.ScrollableFlowColumn
+import org.hertsig.compose.display
+import org.hertsig.compose.modifier
+import org.hertsig.core.error
+import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.*
-import org.hertsig.dnd.component.*
 import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.d
 
-private val log = KotlinLogging.logger {}
+private val log = logger {}
 
 @Composable
 fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
@@ -135,7 +143,7 @@ private fun Ability(statBlock: StatBlock, ability: Ability) {
         is Ability.RangedAttack -> RangedAttack(statBlock, name, ability)
         is Ability.Custom -> Custom(statBlock, name, ability)
         is LegendaryAbility -> Legendary(statBlock, ability)
-        else -> log.error("No renderer for $ability")
+        else -> log.error{"No renderer for $ability"}
     }
 }
 
@@ -208,7 +216,7 @@ private fun Legendary(statBlock: StatBlock, ability: LegendaryAbility) {
         is Ability.MeleeAttack -> MeleeAttack(statBlock, name, real)
         is Ability.RangedAttack -> RangedAttack(statBlock, name, real)
         is Ability.Custom -> Custom(statBlock, name, real)
-        else -> log.error("No renderer for $real (inside legendary)")
+        else -> log.error { "No renderer for $real (inside legendary)" }
     }
 }
 

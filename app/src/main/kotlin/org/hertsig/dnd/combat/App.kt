@@ -11,19 +11,19 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import mu.KotlinLogging
+import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.*
 import java.util.*
 
-private val log = KotlinLogging.logger {}
+private val log = logger {}
 private val colors = lightColors(Color(0xff1775d1), Color(0xff63a3ff), Color(0xffcfff95), Color(0xff9ccc65))
 
 @OptIn(ExperimentalMaterialApi::class)
 fun main() {
     Thread.setDefaultUncaughtExceptionHandler { _, e ->
-        log.error(e) { "Uncaught exception" }
+        log.error("Uncaught exception", e)
         e.suppressed.forEach {
-            if (it.stackTrace.isNotEmpty()) log.error(it) { "Suppressed" }
+            if (it.stackTrace.isNotEmpty()) log.error("Suppressed", it)
         }
     }
 

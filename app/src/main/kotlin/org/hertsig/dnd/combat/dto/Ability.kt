@@ -56,5 +56,5 @@ interface Ability {
 }
 
 class LegendaryAbility(val ability: Ability, val cost: Int = 1): Ability by ability {
-    fun costDisplay() = if (cost == 1) "" else " ($cost actions)"
+    fun costDisplay() = if (cost == 1) "" else " (costs $cost actions)"
 }

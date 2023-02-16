@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.hertsig.dnd.combat.dto.AppState
 import org.hertsig.dnd.combat.dto.CombatEntry
-import org.hertsig.dnd.component.TextLine
+import org.hertsig.compose.component.TextLine
 
 @Composable
 fun CombatPage(state: AppState, modifier: Modifier = Modifier) {

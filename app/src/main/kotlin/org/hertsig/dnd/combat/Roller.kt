@@ -5,7 +5,7 @@ import androidx.compose.material.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
-import org.hertsig.dnd.component.TextLine
+import org.hertsig.compose.component.TextLine
 import org.hertsig.dnd.dice.Dice
 
 @Composable

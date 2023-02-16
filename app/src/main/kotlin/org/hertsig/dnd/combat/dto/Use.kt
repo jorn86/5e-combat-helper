@@ -1,9 +1,5 @@
 package org.hertsig.dnd.combat.dto
 
-import mu.KotlinLogging
-
-private val log = KotlinLogging.logger {}
-
 sealed interface Use {
     val amount: Int
     val reset: String

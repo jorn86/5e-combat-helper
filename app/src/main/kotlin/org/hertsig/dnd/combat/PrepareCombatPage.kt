@@ -7,11 +7,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
+import org.hertsig.compose.autoFocus
+import org.hertsig.compose.component.BasicEditNumber
+import org.hertsig.compose.component.BasicEditText
+import org.hertsig.compose.component.RowTextLine
+import org.hertsig.compose.component.TextLine
 import org.hertsig.dnd.combat.dto.AppState
 import org.hertsig.dnd.combat.dto.CombatEntry
 import org.hertsig.dnd.combat.dto.Stat
 import org.hertsig.dnd.combat.dto.modifierFor
-import org.hertsig.dnd.component.*
 import org.hertsig.dnd.dice.DieRoll
 import org.hertsig.dnd.dice.DieRolls
 import org.hertsig.dnd.dice.d
@@ -30,7 +34,7 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
             focusRequester.requestFocus()
         }
 
-        EditText(labelState, Modifier.autoFocus(focusRequester).width(200.dp), "Label")
+        BasicEditText(labelState, Modifier.autoFocus(focusRequester).width(200.dp), "Label")
 
         state.statBlocks.forEach {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -58,8 +62,8 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
             val initiative by initiativeState
 
             Row(Modifier.width(200.dp), Arrangement.spacedBy(4.dp)) {
-                EditNumber(initiativeState, -4, 30)
-                EditNumber(initiativeModifierState, -5, 10)
+                BasicEditNumber(initiativeState, -4, 30)
+                BasicEditNumber(initiativeModifierState, -5, 10)
             }
             Button({
                 finish(label, DieRolls(listOf(DieRoll(20, initiative - modifier)), modifier),

@@ -15,11 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import mu.KotlinLogging
-import org.hertsig.dnd.component.ScrollableColumn
-import org.hertsig.dnd.component.TextLine
+import org.hertsig.compose.component.ScrollableColumn
+import org.hertsig.compose.component.TextLine
+import org.hertsig.core.error
+import org.hertsig.core.logger
 
-private val log = KotlinLogging.logger {}
+private val log = logger {}
 
 @Composable
 fun Log(logEntries: List<LogEntry>) {
@@ -33,7 +34,7 @@ fun Log(logEntries: List<LogEntry>) {
                         is LogEntry.Text -> TextLine(it.text)
                         is LogEntry.Roll -> RollEntry(it)
                         is LogEntry.Attack -> AttackEntry(it)
-                        else -> log.error("No renderer for $it")
+                        else -> log.error{"No renderer for $it"}
                     }
                 }
             }
@@ -46,10 +47,10 @@ private fun RollEntry(roll: LogEntry.Roll) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         CompositionLocalProvider(LocalTextStyle.provides(MaterialTheme.typography.h4)) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
-                RollResult(roll.first, Modifier.size(50.dp))
+                RollResult(roll.first, Modifier.sizeIn(minWidth = 70.dp))
                 roll.second?.let {
                     TextLine("|")
-                    RollResult(it, Modifier.size(50.dp))
+                    RollResult(it, Modifier.sizeIn(minWidth = 70.dp))
                 }
             }
         }
@@ -63,10 +64,10 @@ private fun AttackEntry(attack: LogEntry.Attack) {
     Column(Modifier.fillMaxWidth(), Arrangement.spacedBy(2.dp), Alignment.CenterHorizontally) {
         CompositionLocalProvider(LocalTextStyle.provides(MaterialTheme.typography.h4)) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
-                RollResult(attack.firstHit, Modifier.size(50.dp))
+                RollResult(attack.firstHit, Modifier.sizeIn(minWidth = 70.dp))
                 attack.secondHit?.let {
                     TextLine("|")
-                    RollResult(it, Modifier.size(50.dp))
+                    RollResult(it, Modifier.sizeIn(minWidth = 70.dp))
                 }
             }
         }
