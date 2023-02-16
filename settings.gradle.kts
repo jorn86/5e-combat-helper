@@ -1,4 +1,4 @@
-rootProject.name = "my-project"
+rootProject.name = "5e-combat-helper"
 
 include("app")
 include("core")
