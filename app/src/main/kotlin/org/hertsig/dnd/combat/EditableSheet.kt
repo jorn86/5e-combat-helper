@@ -199,8 +199,7 @@ private fun AbilityBlock(
                 // Don't call save() yet when adding empty new abilities
                 Button({ add(Ability.Trait()) }) { RowTextLine("Trait") }
                 if (showAttacks) {
-                    Button({ add(Ability.MeleeAttack()) }) { RowTextLine("Melee attack") }
-                    Button({ add(Ability.RangedAttack()) }) { RowTextLine("Ranged attack") }
+                    Button({ add(Ability.Attack()) }) { RowTextLine("Attack") }
                 }
                 Button({ add(Ability.Custom()) }) { RowTextLine("Custom") }
             }
@@ -212,8 +211,7 @@ private fun AbilityBlock(
 private fun EditSingleAbility(ability: Ability, abilities: SnapshotStateList<Ability>, save: () -> Unit, legendaryUses: Int = 0) {
     when (ability) {
         is Ability.Trait -> EditTrait(abilities, ability, save, legendaryUses)
-        is Ability.MeleeAttack -> EditMeleeAttack(abilities, ability, save, legendaryUses)
-        is Ability.RangedAttack -> EditRangedAttack(abilities, ability, save, legendaryUses)
+        is Ability.Attack -> EditAttack(abilities, ability, save, legendaryUses)
         is Ability.Custom -> EditCustom(abilities, ability, save, legendaryUses)
         is LegendaryAbility -> {
             require(legendaryUses == 0) { "Nested legendary: $ability" }
@@ -239,65 +237,46 @@ private fun EditTrait(abilities: SnapshotStateList<Ability>, trait: Ability.Trai
 }
 
 @Composable
-private fun EditMeleeAttack(abilities: SnapshotStateList<Ability>, attack: Ability.MeleeAttack, save: () -> Unit, legendaryUses: Int = 0) {
+private fun EditAttack(abilities: SnapshotStateList<Ability>, attack: Ability.Attack, save: () -> Unit, legendaryUses: Int = 0) {
     val name = remember(attack) { mutableStateOf(attack.name) }
     val stat = remember(attack) { mutableStateOf(attack.stat) }
     val modifier = remember(attack) { mutableStateOf(attack.modifier) }
     val proficient = remember(attack) { mutableStateOf(attack.proficient) }
-    val reach = remember(attack) { mutableStateOf(attack.reach) }
+    val reach = remember(attack) { mutableStateOf(attack.reach ?: 0) }
+    val range = remember(attack) { mutableStateOf(attack.range ?: 0) }
+    val longRange = remember(attack) { mutableStateOf(attack.longRange ?: 0) }
     val target = remember(attack) { mutableStateOf(attack.target) }
     val damage = remember(attack) { mutableStateOf(attack.damage) }
     val use = remember(attack) { mutableStateOf(attack.use) }
+    val extra = remember(attack) { mutableStateOf(attack.extra) }
     val legendary = remember(attack) { mutableStateOf(legendaryUses) }
-    fun update(n: String = name.value, l: Int = legendary.value, s: Stat? = stat.value, m: Int = modifier.value, p: Boolean = proficient.value, r: Int = reach.value, t: String = target.value, d: Dice = damage.value, u: Use = use.value) {
-        update(abilities, attack, Ability.MeleeAttack(n, s, m, p, r, t, d, u), l)
+    fun update(n: String = name.value, l: Int = legendary.value, s: Stat? = stat.value, m: Int = modifier.value,
+               p: Boolean = proficient.value, re: Int = reach.value, r: Int = range.value, lr: Int = longRange.value,
+               t: String = target.value, d: Dice = damage.value, u: Use = use.value, e: String = extra.value) {
+        update(abilities, attack, Ability.Attack(n, s, m, p, re.n(), r.n(), lr.n()?.takeIf { it > r }, t, d, e, u), l)
         save()
     }
     EditAbility(attack, name, use, { n, l, u -> update(n = n, l = l, u = u) }, abilities, save, legendary) {
         BasicDropdown(stat, listOf(null, Stat.STRENGTH, Stat.DEXTERITY), Modifier.width(90.dp), onUpdate = { update(s = it) }) { it?.display ?: "Custom" }
         BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { update(m = it) }
+        // TODO nicer UI for combined melee / ranged
         TextLine("Reach")
-        BasicEditNumber(reach, 0, 25, 5, 36.dp, "ft.") { update(r = it) }
+        BasicEditNumber(reach, 0, 25, 5, 36.dp, "ft.") { update(re = it) }
+        TextLine("Range")
+        BasicEditNumber(range, 0, 300, 5, 36.dp, "ft.") { update(r = it) }
+        TextLine("/")
+        BasicEditNumber(longRange, 0, 600, 5, 36.dp, "ft.") { update(lr = it) }
         EditDamage(damage.value) {
             if (it != null) {
                 damage.value = it
                 update(d = it)
             }
         }
+        BasicEditText(extra) { update(e = it) }
     }
 }
 
-@Composable
-private fun EditRangedAttack(abilities: SnapshotStateList<Ability>, attack: Ability.RangedAttack, save: () -> Unit, legendaryUses: Int = 0) {
-    val name = remember(attack) { mutableStateOf(attack.name) }
-    val stat = remember(attack) { mutableStateOf(attack.stat) }
-    val modifier = remember(attack) { mutableStateOf(attack.modifier) }
-    val proficient = remember(attack) { mutableStateOf(attack.proficient) }
-    val range = remember(attack) { mutableStateOf(attack.range) }
-    val longRange = remember(attack) { mutableStateOf(attack.longRange) }
-    val target = remember(attack) { mutableStateOf(attack.target) }
-    val damage = remember(attack) { mutableStateOf(attack.damage) }
-    val use = remember(attack) { mutableStateOf(attack.use) }
-    val legendary = remember(attack) { mutableStateOf(legendaryUses) }
-    fun update(n: String = name.value, l: Int = legendary.value, s: Stat? = stat.value, m: Int = modifier.value, p: Boolean = proficient.value, r: Int = range.value, lr: Int = longRange.value, t: String = target.value, d: Dice = damage.value, u: Use = use.value) {
-        update(abilities, attack, Ability.RangedAttack(n, s, m, p, r, lr, t, d, u), l)
-        save()
-    }
-    EditAbility(attack, name, use, { n, l, u -> update(n = n, l = l, u = u) }, abilities, save, legendary) {
-        BasicDropdown(stat, listOf(null, Stat.STRENGTH, Stat.DEXTERITY), Modifier.width(90.dp), onUpdate = { update(s = it) }) { it?.display ?: "Custom" }
-        BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { update(m = it) }
-        TextLine("Range")
-        BasicEditNumber(range, 10, 300, 5, 36.dp, "ft.") { update(r = it) }
-        TextLine("/")
-        BasicEditNumber(longRange, 10, 600, 5, 36.dp, "ft.") { update(lr = it) }
-        EditDamage(damage.value) {
-            if (it != null) {
-                damage.value = it
-                update(d = it)
-            }
-        }
-    }
-}
+private fun Int.n() = takeIf { it > 0 }
 
 @Composable
 private fun EditCustom(abilities: SnapshotStateList<Ability>, ability: Ability.Custom, save: () -> Unit, legendaryUses: Int = 0) {

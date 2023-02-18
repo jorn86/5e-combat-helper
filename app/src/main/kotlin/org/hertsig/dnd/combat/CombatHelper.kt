@@ -6,8 +6,6 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -15,22 +13,17 @@ import org.hertsig.compose.component.IconButton
 import org.hertsig.compose.component.TextLine
 import org.hertsig.compose.component.VerticalDivider
 import org.hertsig.dnd.combat.dto.AppState
-import org.hertsig.dnd.combat.dto.rememberAppState
-import org.hertsig.dnd.dice.Dice
 
 @Composable
-fun CombatHelper() {
-    logEntries = remember { mutableStateListOf(LogEntry.Roll("Border test", "", Dice(listOf(4,6,8,10,12,20), 1).roll())) }
-//    logEntries = remember { mutableStateListOf() }
-    val state = rememberAppState()
+fun CombatHelper(state: AppState) {
     Column {
         TitleBar(state)
 
         val page = state.page
         Row {
             when (page) {
-                Page.PrepareCombat -> InitiativeList(state, false)
-                Page.Combat -> InitiativeList(state, true)
+                Page.PrepareCombat -> InitiativeList(state, Modifier.width(250.dp))
+                Page.Combat -> InitiativeList(state, Modifier.width(250.dp), showControls = true)
                 else -> StatBlockList(state)
             }
             VerticalDivider()
@@ -70,7 +63,7 @@ private fun TitleBar(state: AppState) {
             val combat = page == Page.Combat
             BarButton(Icons.Default.KeyboardArrowUp, combat) { state.previousInitiative() }
             BarButton(Icons.Default.KeyboardArrowDown, combat) { state.nextInitiative() }
-            BarButton(Icons.Default.Shield, none || show) { state.toCombat() }
+            BarButton(Icons.Default.Shield, none || show || overview) { state.toCombat() }
             BarButton(Icons.Default.Settings, combat) { state.toPrepareCombat() }
             BarButton(Icons.Default.RestartAlt, prepareCombat || combat) { state.restartInitiative() }
             BarButton(Icons.Default.Start, prepareCombat) { state.startCombat() }

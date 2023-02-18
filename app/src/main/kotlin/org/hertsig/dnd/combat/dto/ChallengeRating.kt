@@ -45,4 +45,4 @@ enum class ChallengeRating(val value: Float, val xp: Int, val display: String) {
 }
 
 val ChallengeRating.proficiencyBonus get() = (value.toInt() - 1) / 4 + 2
-val StatBlock.xp get() = challengeRating.xp / if (minion) 4 else 1
+val StatBlock.xp get() = challengeRating.xp

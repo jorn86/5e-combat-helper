@@ -30,7 +30,7 @@ fun StatBlockList(state: AppState) {
             RowTextLine("Add...", style = MaterialTheme.typography.subtitle1)
         }
         ScrollableColumn(Modifier.weight(1f), Arrangement.spacedBy(4.dp), PaddingValues(0.dp)) {
-            items(state.statBlocks.filter { it.visible }, { Key(state.active, it) }) {
+            items(state.statBlocks, { Key(state.active, it) }) {
                 val colors = MaterialTheme.colors
                 val isCurrent by remember { derivedStateOf { it == state.active } }
                 val backgroundColor by remember { derivedStateOf { if (isCurrent) colors.primary else colors.secondary } }

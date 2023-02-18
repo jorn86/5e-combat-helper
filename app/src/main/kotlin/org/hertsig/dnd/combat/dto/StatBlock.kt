@@ -1,7 +1,9 @@
 package org.hertsig.dnd.combat.dto
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import java.util.*
 
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 data class StatBlock(
     val name: String,
     val size: Size = Size.MEDIUM,
@@ -33,8 +35,6 @@ data class StatBlock(
     val legendaryActionUses: Int = 0,
     val casterLevel: CasterLevel = CasterLevel.NONE,
     val casterAbility: Stat = Stat.INTELLIGENCE,
-    val minion: Boolean = false,
-    val visible: Boolean = true,
 ) {
     fun copy(stat: Stat, value: Int) = when (stat) {
         Stat.STRENGTH -> copy(strength = value)

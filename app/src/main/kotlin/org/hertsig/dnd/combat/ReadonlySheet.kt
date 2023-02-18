@@ -13,13 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.flowlayout.FlowRow
 import org.hertsig.compose.component.HorizontalDivider
 import org.hertsig.compose.component.RowTextLine
 import org.hertsig.compose.component.TextLine
+import org.hertsig.compose.component.TooltipText
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
@@ -28,7 +28,6 @@ import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.component.displayForEach
 import org.hertsig.dnd.component.modifier
-import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.d
 
 private val log = logger {}
@@ -42,8 +41,10 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 RowTextLine("${statBlock.size.display} ${statBlock.type}")
             }
             Row {
-                TraitLine("Challenge rating", "${statBlock.challengeRating.display} (${statBlock.xp} XP)",
-                    Modifier.weight(1f), visible = statBlock.challengeRating != ChallengeRating.NONE)
+                TraitLine(
+                    "Challenge rating", "${statBlock.challengeRating.display} (${statBlock.xp} XP)",
+                    Modifier.weight(1f), visible = statBlock.challengeRating != ChallengeRating.NONE
+                )
                 TraitLine("Proficiency bonus", modifier(statBlock.proficiencyBonus), Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth().padding(vertical = 20.dp), Arrangement.SpaceAround) {
@@ -56,7 +57,14 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
 
                 var image by remember { mutableStateOf<ImageBitmap?>(null) }
                 LaunchedEffect(statBlock) { image = statBlock.image() }
-                image?.let { Image(it, statBlock.name, Modifier.sizeIn(maxHeight = 120.dp), contentScale = ContentScale.Inside) }
+                image?.let {
+                    Image(
+                        it,
+                        statBlock.name,
+                        Modifier.sizeIn(maxHeight = 120.dp),
+                        contentScale = ContentScale.Inside
+                    )
+                }
             }
         }
 
@@ -72,12 +80,14 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 TraitLine("Senses", statBlock.displaySenses(), singleLine = false)
 
                 TraitLine("Languages", statBlock.languages)
-                TraitLine("Caster level", "${statBlock.casterLevel.display} (${statBlock.casterAbility.display})",
-                    visible = statBlock.casterLevel != CasterLevel.NONE)
+                TraitLine(
+                    "Caster level", "${statBlock.casterLevel.display} (${statBlock.casterAbility.display})",
+                    visible = statBlock.casterLevel != CasterLevel.NONE
+                )
                 FlowRow {
                     val allSkills = statBlock.allSkills
                     TraitLine("Skills", visible = allSkills.isNotEmpty())
-                    allSkills.displayForEach({ " ${it.display} (${modifier(statBlock.modifierFor(it))})"}) { text, it ->
+                    allSkills.displayForEach({ " ${it.display} (${modifier(statBlock.modifierFor(it))})" }) { text, it ->
                         Roller(text, (1 d 20) + statBlock.modifierFor(it), statBlock.name)
                     }
                 }
@@ -88,9 +98,11 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
             AbilityBlock("Bonus actions", statBlock, statBlock.bonusActions)
             AbilityBlock("Reactions", statBlock, statBlock.reactions)
             AbilityBlock("Legendary actions", statBlock, statBlock.legendaryActions) {
-                Text("The ${statBlock.name} can take ${statBlock.legendaryActionUses} legendary actions, choosing from the options below. " +
-                        "Only one legendary action can be used at a time and only at the end of another creature's turn. " +
-                        "The ${statBlock.name} regains spent legendary actions at the start of its turn.")
+                Text(
+                    "The ${statBlock.name} can take ${statBlock.legendaryActionUses} legendary actions, choosing from the options below. " +
+                            "Only one legendary action can be used at a time and only at the end of another creature's turn. " +
+                            "The ${statBlock.name} regains spent legendary actions at the start of its turn."
+                )
             }
         }
     }
@@ -106,18 +118,27 @@ private fun AbilityScore(ability: String, statBlock: StatBlock, stat: Stat) {
 
         val modifier = statBlock.modifiers[stat]
         val modifierText = modifier(modifier)
-        Roller(statBlock.scores[stat].toString(), (1 d 20) + modifier, statBlock.name,
-            "${stat.display} ($modifierText)", MaterialTheme.typography.h3)
+        Roller(
+            statBlock.scores[stat].toString(), (1 d 20) + modifier, statBlock.name,
+            "${stat.display} ($modifierText)", MaterialTheme.typography.h3
+        )
 
         val saveModifier = statBlock.saveModifierFor(stat)
         val saveModifierText = modifier(saveModifier)
-        Roller("Save $saveModifierText", (1 d 20) + saveModifier, statBlock.name,
-            "${stat.display} saving throw ($saveModifierText)")
+        Roller(
+            "Save $saveModifierText", (1 d 20) + saveModifier, statBlock.name,
+            "${stat.display} saving throw ($saveModifierText)"
+        )
     }
 }
 
 @Composable
-private fun AbilityBlock(label: String, statBlock: StatBlock, abilities: List<Ability>, extraContent: @Composable ColumnScope.() -> Unit = {}) {
+private fun AbilityBlock(
+    label: String,
+    statBlock: StatBlock,
+    abilities: List<Ability>,
+    extraContent: @Composable ColumnScope.() -> Unit = {}
+) {
     if (abilities.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Column {
@@ -134,44 +155,56 @@ private fun Ability(statBlock: StatBlock, ability: Ability) {
     val name = ability.name + ability.use.display
     when (ability) {
         is Ability.Trait -> TraitLine(name, ability.description, singleLine = false)
-        is Ability.MeleeAttack -> MeleeAttack(statBlock, name, ability)
-        is Ability.RangedAttack -> RangedAttack(statBlock, name, ability)
+        is Ability.Attack -> Attack(statBlock, name, ability)
         is Ability.Custom -> Custom(statBlock, name, ability)
         is LegendaryAbility -> Legendary(statBlock, ability)
-        else -> log.error{"No renderer for $ability"}
+        else -> log.error { "No renderer for $ability" }
     }
 }
 
 @Composable
-private fun MeleeAttack(statBlock: StatBlock, name: String, attack: Ability.MeleeAttack) {
-    val rangeText = "reach ${attack.reach} ft."
-    AttackRoller(
-        name,
-        "Melee weapon attack",
-        statBlock.modifierFor(attack.stat, attack.proficient) + attack.modifier,
-        rangeText,
-        attack.target,
-        attack.damage + statBlock.modifierFor(attack.stat, false),
-        statBlock.name
-    )
+fun Attack(statBlock: StatBlock, name: String, attack: Ability.Attack, expand: Boolean = true) {
+    val rangeText = listOfNotNull(
+        attack.reach?.let { "reach $it ft." },
+        attack.range?.let {
+            var text = "range $it"
+            attack.longRange?.let { lr -> if (lr != it) text += "/$lr" }
+            text += " ft."
+            text
+        }
+    ).joinToString(" or ")
+    val modifier = statBlock.modifierFor(attack.stat, attack.proficient) + attack.modifier
+    val damage = attack.damage + statBlock.modifierFor(attack.stat, false)
+    FlowRow {
+        val attackRoll = (1 d 20) + modifier
+        TextLine("$name:", Modifier.clickable {
+            log(
+                LogEntry.Attack(
+                    statBlock.name,
+                    name, attackRoll.roll(), attackRoll.roll(), damage.roll()
+                )
+            )
+        }, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
+//        TextLine(" $type, ", style = style)
+        Roller("${modifier(modifier)} to hit, ", attackRoll, statBlock.name, name)
+        TextLine("$rangeText. ")
+//        TextLine("${attack.target}. ")
+        val hitText = "Hit: $damage damage"
+        if (attack.extra.isNotBlank() && expand) {
+            Roller("$hitText, ", damage, statBlock.name, "$name: ${damage.type} damage", LocalTextStyle.current, false)
+            Text(attack.extra)
+        } else if (attack.extra.isNotBlank()) {
+            TooltipText("$hitText, ${attack.extra}") {
+                Roller(hitText, damage, statBlock.name, "$name: ${damage.type} damage", LocalTextStyle.current, false)
+            }
+        } else {
+            Roller(hitText, damage, statBlock.name, "$name: ${damage.type} damage", LocalTextStyle.current, false)
+        }
+    }
 }
 
 @Composable
-private fun RangedAttack(statBlock: StatBlock, name: String, attack: Ability.RangedAttack) {
-    val rangeText = if (attack.range >= attack.longRange) "range ${attack.range} ft." else "range ${attack.range} / ${attack.longRange} ft."
-    AttackRoller(
-        name,
-        "Ranged weapon attack",
-        statBlock.modifierFor(attack.stat, attack.proficient) + attack.modifier,
-        rangeText,
-        attack.target,
-        attack.damage + statBlock.modifierFor(attack.stat, false),
-        statBlock.name
-    )
-}
-
-@Composable
-private fun Custom(statBlock: StatBlock, name: String, ability: Ability.Custom) {
+fun Custom(statBlock: StatBlock, name: String, ability: Ability.Custom, expand: Boolean = true) {
     Column {
         Row {
             if (ability.roll == null) {
@@ -196,9 +229,9 @@ private fun Custom(statBlock: StatBlock, name: String, ability: Ability.Custom) 
                     twice = false
                 )
             }
-            TextLine(": ")
+            if (expand) TextLine(": ")
         }
-        Text(ability.description)
+        if (expand) Text(ability.description)
     }
 }
 
@@ -208,37 +241,13 @@ private fun Legendary(statBlock: StatBlock, ability: LegendaryAbility) {
     val name = real.name + ability.costDisplay() + real.use.display
     when (real) {
         is Ability.Trait -> TraitLine(name, real.description, singleLine = false)
-        is Ability.MeleeAttack -> MeleeAttack(statBlock, name, real)
-        is Ability.RangedAttack -> RangedAttack(statBlock, name, real)
+        is Ability.Attack -> Attack(statBlock, name, real)
         is Ability.Custom -> Custom(statBlock, name, real)
         else -> log.error { "No renderer for $real (inside legendary)" }
     }
 }
 
-@Composable
-private fun AttackRoller(
-    name: String,
-    type: String,
-    modifier: Int,
-    rangeText: String,
-    target: String,
-    damage: Dice,
-    creatureName: String,
-    style: TextStyle = LocalTextStyle.current
-) {
-    FlowRow {
-        val attackRoll = (1 d 20) + modifier
-        TextLine("$name:", Modifier.clickable {
-            log(LogEntry.Attack(creatureName, name, attackRoll.roll(), attackRoll.roll(), damage.roll()))
-        }, style = style.copy(fontWeight = FontWeight.Bold))
-//        TextLine(" $type, ", style = style)
-        Roller("${modifier(modifier)} to hit, ", attackRoll, creatureName, name, style)
-        TextLine("$rangeText, $target. ", style = style)
-        Roller("Hit: $damage damage", damage, creatureName, "$name: ${damage.type} damage", style, false)
-    }
-}
-
 private fun StatBlock.displaySenses(): String {
-    val pp = "Passive perception ${ 10 + modifierFor(Skill.PERCEPTION) }"
+    val pp = "Passive perception ${10 + modifierFor(Skill.PERCEPTION)}"
     return if (senses.isBlank()) pp else "$senses, ${pp.lowercase()}"
 }

@@ -24,18 +24,18 @@ import org.hertsig.dnd.component.modifier
 import org.hertsig.dnd.dice.d
 
 @Composable
-fun OverviewPage(state: AppState, modifier: Modifier) {
+fun OverviewPage(state: AppState, modifier: Modifier, statBlocks: List<StatBlock> = state.statBlocks) {
     CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
         Column(modifier.padding(8.dp)) {
-            val columns = remember { mutableStateOf(3) }
+            val columns = remember { mutableStateOf((statBlocks.size / 3).coerceIn(1, 4)) }
             var expand by remember { mutableStateOf(true) }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(expand, { expand = !expand })
                 RowTextLine("Expand")
-                BasicEditNumber(columns, 2, 6, suffix = "columns", width = 70.dp)
+                BasicEditNumber(columns, 1, 6, suffix = "columns", width = 70.dp)
             }
             ScrollableFlowColumn(4.dp, 4.dp, ReorderStrategy(), columns.value) {
-                state.statBlocks.forEach {
+                statBlocks.forEach {
                     StatBlockView(it, it == state.active, expand)
                 }
             }
@@ -46,7 +46,7 @@ fun OverviewPage(state: AppState, modifier: Modifier) {
 @Composable
 fun StatBlockView(statBlock: StatBlock, active: Boolean = false, expand: Boolean = true) {
     val color = if (active) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.primary
-    Column(Modifier.border(2.dp, color, RoundedCornerShape(8.dp)).padding(8.dp, 4.dp).fillMaxWidth()) {
+    Column(Modifier.border(2.dp, color, RoundedCornerShape(8.dp)).padding(8.dp, 4.dp)) {
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
             TextLine(statBlock.name, style = MaterialTheme.typography.h6)
             TextLine(statBlock.type)
@@ -89,32 +89,36 @@ fun StatBlockView(statBlock: StatBlock, active: Boolean = false, expand: Boolean
             TraitLine("Languages", statBlock.languages, singleLine = false)
         }
 
-        DisplayAbilities(statBlock.traits, statBlock.name, expand)
-        DisplayAbilities(statBlock.actions, statBlock.name, expand)
-        DisplayAbilities(statBlock.bonusActions, statBlock.name, expand)
-        DisplayAbilities(statBlock.reactions, statBlock.name, expand)
-        DisplayAbilities(statBlock.legendaryActions, statBlock.name, expand) {
+        DisplayAbilities(statBlock.traits, statBlock, expand)
+        DisplayAbilities(statBlock.actions, statBlock, expand)
+        DisplayAbilities(statBlock.bonusActions, statBlock, expand)
+        DisplayAbilities(statBlock.reactions, statBlock, expand)
+        DisplayAbilities(statBlock.legendaryActions, statBlock, expand) {
             TraitLine("Legendary actions", statBlock.legendaryActionUses.toString())
         }
     }
 }
 
 @Composable
-private fun DisplayAbilities(abilities: List<Ability>, creatureName: String, expand: Boolean, extraContent: @Composable () -> Unit = {}) {
+private fun DisplayAbilities(abilities: List<Ability>, statBlock: StatBlock, expand: Boolean, extraContent: @Composable () -> Unit = {}) {
     if (abilities.isNotEmpty()) {
         HorizontalDivider()
         extraContent()
         abilities.forEach {
-            DisplayAbility(it, creatureName, expand)
+            DisplayAbility(it, statBlock, expand)
         }
     }
 }
 
 @Composable
-private fun DisplayAbility(ability: Ability, creatureName: String, expand: Boolean, addToName: String = "") {
+private fun DisplayAbility(ability: Ability, statBlock: StatBlock, expand: Boolean, addToName: String = "") {
     when (ability) {
-        is Ability.Trait -> TraitLine(ability.name + addToName, ability.description, singleLine = false, visible = true)
-        is LegendaryAbility -> DisplayAbility(ability.ability, creatureName, expand, ability.costDisplay())
+        is Ability.Trait -> TraitLine(ability.name + addToName, ability.description.show(expand), singleLine = false, visible = true)
+        is Ability.Attack -> Attack(statBlock, ability.name + addToName, ability, expand)
+        is Ability.Custom -> Custom(statBlock, ability.name + addToName, ability, expand)
+        is LegendaryAbility -> DisplayAbility(ability.ability, statBlock, expand, ability.costDisplay())
         else -> TraitLine(ability.name + addToName, visible = true)
     }
 }
+
+private fun String.show(expand: Boolean) = if (expand) this else ""

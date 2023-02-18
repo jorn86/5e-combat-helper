@@ -7,10 +7,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.*
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.*
 import java.util.*
@@ -28,15 +25,30 @@ fun main() {
     }
 
     application {
+//    logEntries = remember { mutableStateListOf(LogEntry.Roll("Border test", "", Dice(listOf(4,6,8,10,12,20), 1).roll())) }
+        logEntries = remember { mutableStateListOf() }
+        val state = rememberAppState()
+
         Window(::exitApplication, rememberWindowState(
             position = WindowPosition(2600.dp, 400.dp),
             width = 1800.dp,
-            height = 1000.dp
+            height = 1000.dp,
         ), title = "Combat helper") {
             CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
                 MaterialTheme(colors) {
-                    Surface {
-                        CombatHelper()
+                    CombatHelper(state)
+                }
+            }
+        }
+
+        if (state.current != null && state.initiative.isNotEmpty()) {
+            Window({}, rememberWindowState(
+                width = 300.dp,
+                height = 800.dp,
+            ), title = "Initiative") {
+                CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+                    MaterialTheme(colors) {
+                        InitiativeList(state, playerView = true)
                     }
                 }
             }

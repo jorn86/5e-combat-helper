@@ -131,6 +131,7 @@ data class AppState(
     }
 
     fun previousInitiative() {
+        if (initiative.isEmpty()) return moveInitiative(null, Round.DECREMENT)
         when (val it = current) {
             null -> moveInitiative(initiative.first(), Round.RESET)
             initiative.first() -> moveInitiative(initiative.last(), Round.DECREMENT)
@@ -139,6 +140,7 @@ data class AppState(
     }
 
     fun nextInitiative() {
+        if (initiative.isEmpty()) return moveInitiative(null, Round.INCREMENT)
         when (val it = current) {
             null -> moveInitiative(initiative.first(), Round.RESET)
             initiative.last() -> moveInitiative(initiative.first(), Round.INCREMENT)
@@ -147,9 +149,9 @@ data class AppState(
     }
 
     private enum class Round { RESET, INCREMENT, DECREMENT, NO_CHANGE }
-    private fun moveInitiative(entry: CombatEntry, roundChange: Round = Round.NO_CHANGE) {
+    private fun moveInitiative(entry: CombatEntry?, roundChange: Round = Round.NO_CHANGE) {
         current = entry
-        if (entry is CombatEntry.Creature) active = entry.statBlock
+        if (entry is CombatEntry.StatBlockEntry) active = entry.statBlock
         when (roundChange) {
             Round.RESET -> round = 1
             Round.DECREMENT -> if (round > 1) round--

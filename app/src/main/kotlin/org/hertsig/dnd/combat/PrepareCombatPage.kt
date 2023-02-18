@@ -34,8 +34,6 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
             focusRequester.requestFocus()
         }
 
-        BasicEditText(labelState, Modifier.autoFocus(focusRequester).width(200.dp), "Label")
-
         state.statBlocks.forEach {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 val initiativeRoll = (1 d 20) + it.modifierFor(Stat.DEXTERITY)
@@ -54,6 +52,8 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
                 }
             }
         }
+
+        BasicEditText(labelState, Modifier.autoFocus(focusRequester).width(200.dp), "Label")
 
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             val initiativeModifierState = remember { mutableStateOf(2) }
