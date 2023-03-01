@@ -1,4 +1,4 @@
-package org.hertsig.dnd.combat
+package org.hertsig.dnd.combat.service
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser

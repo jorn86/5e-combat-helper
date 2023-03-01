@@ -1,4 +1,4 @@
-package org.hertsig.dnd.combat
+package org.hertsig.dnd.combat.page
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -18,16 +18,24 @@ import org.hertsig.compose.component.TextLine
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
+import org.hertsig.core.error
+import org.hertsig.core.logger
+import org.hertsig.dnd.combat.component.displayForEach
+import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
-import org.hertsig.dnd.component.displayForEach
-import org.hertsig.dnd.component.modifier
+import org.hertsig.dnd.combat.element.Attack
+import org.hertsig.dnd.combat.element.Roller
+import org.hertsig.dnd.combat.element.Trait
+import org.hertsig.dnd.combat.element.TraitLine
 import org.hertsig.dnd.dice.d
 
+private val log = logger {}
+
 @Composable
-fun OverviewPage(state: AppState, modifier: Modifier, statBlocks: List<StatBlock> = state.statBlocks) {
+fun OverviewPage(statBlocks: List<StatBlock>, modifier: Modifier, active: StatBlock? = null) {
     CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
         Column(modifier.padding(8.dp)) {
-            val columns = remember { mutableStateOf((statBlocks.size / 3).coerceIn(1, 4)) }
+            val columns = remember { mutableStateOf((statBlocks.size / 3).coerceIn(2, 4)) }
             var expand by remember { mutableStateOf(true) }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(expand, { expand = !expand })
@@ -36,7 +44,7 @@ fun OverviewPage(state: AppState, modifier: Modifier, statBlocks: List<StatBlock
             }
             ScrollableFlowColumn(4.dp, 4.dp, ReorderStrategy(), columns.value) {
                 statBlocks.forEach {
-                    StatBlockView(it, it == state.active, expand)
+                    SmallStatBlock(it, it == active, expand)
                 }
             }
         }
@@ -44,7 +52,7 @@ fun OverviewPage(state: AppState, modifier: Modifier, statBlocks: List<StatBlock
 }
 
 @Composable
-fun StatBlockView(statBlock: StatBlock, active: Boolean = false, expand: Boolean = true) {
+fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolean = true) {
     val color = if (active) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.primary
     Column(Modifier.border(2.dp, color, RoundedCornerShape(8.dp)).padding(8.dp, 4.dp)) {
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
@@ -91,8 +99,8 @@ fun StatBlockView(statBlock: StatBlock, active: Boolean = false, expand: Boolean
 
         DisplayAbilities(statBlock.traits, statBlock, expand)
         DisplayAbilities(statBlock.actions, statBlock, expand)
-        DisplayAbilities(statBlock.bonusActions, statBlock, expand)
-        DisplayAbilities(statBlock.reactions, statBlock, expand)
+        DisplayAbilities(statBlock.bonusActions, statBlock, expand, " (bonus action)")
+        DisplayAbilities(statBlock.reactions, statBlock, expand, " (reaction)")
         DisplayAbilities(statBlock.legendaryActions, statBlock, expand) {
             TraitLine("Legendary actions", statBlock.legendaryActionUses.toString())
         }
@@ -100,12 +108,18 @@ fun StatBlockView(statBlock: StatBlock, active: Boolean = false, expand: Boolean
 }
 
 @Composable
-private fun DisplayAbilities(abilities: List<Ability>, statBlock: StatBlock, expand: Boolean, extraContent: @Composable () -> Unit = {}) {
+private fun DisplayAbilities(
+    abilities: List<Ability>,
+    statBlock: StatBlock,
+    expand: Boolean,
+    addToName: String = "",
+    extraContent: @Composable () -> Unit = {}
+) {
     if (abilities.isNotEmpty()) {
         HorizontalDivider()
         extraContent()
         abilities.forEach {
-            DisplayAbility(it, statBlock, expand)
+            DisplayAbility(it, statBlock, expand, addToName)
         }
     }
 }
@@ -113,12 +127,8 @@ private fun DisplayAbilities(abilities: List<Ability>, statBlock: StatBlock, exp
 @Composable
 private fun DisplayAbility(ability: Ability, statBlock: StatBlock, expand: Boolean, addToName: String = "") {
     when (ability) {
-        is Ability.Trait -> TraitLine(ability.name + addToName, ability.description.show(expand), singleLine = false, visible = true)
-        is Ability.Attack -> Attack(statBlock, ability.name + addToName, ability, expand)
-        is Ability.Custom -> Custom(statBlock, ability.name + addToName, ability, expand)
-        is LegendaryAbility -> DisplayAbility(ability.ability, statBlock, expand, ability.costDisplay())
-        else -> TraitLine(ability.name + addToName, visible = true)
+        is Ability.Attack -> Attack(statBlock, ability, expand, addToName)
+        is Ability.Trait -> Trait(statBlock, ability, expand, addToName)
+        else -> log.error { "No renderer for $ability" }
     }
 }
-
-private fun String.show(expand: Boolean) = if (expand) this else ""

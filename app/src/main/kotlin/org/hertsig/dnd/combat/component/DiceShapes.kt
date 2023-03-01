@@ -1,4 +1,4 @@
-package org.hertsig.dnd.component
+package org.hertsig.dnd.combat.component
 
 import androidx.compose.ui.graphics.Shape
 import org.hertsig.compose.ScaledShape

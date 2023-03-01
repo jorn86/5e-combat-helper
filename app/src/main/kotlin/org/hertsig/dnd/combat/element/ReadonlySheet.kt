@@ -1,4 +1,4 @@
-package org.hertsig.dnd.combat
+package org.hertsig.dnd.combat.element
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -25,16 +25,18 @@ import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
 import org.hertsig.core.error
 import org.hertsig.core.logger
+import org.hertsig.dnd.combat.component.displayForEach
+import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
-import org.hertsig.dnd.component.displayForEach
-import org.hertsig.dnd.component.modifier
+import org.hertsig.dnd.combat.log
+import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.d
 
 private val log = logger {}
 
 @Composable
 fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
-    Column(modifier) {
+    Column(modifier.padding(8.dp)) {
         Column {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                 RowTextLine(statBlock.name, style = MaterialTheme.typography.h4)
@@ -81,8 +83,8 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
 
                 TraitLine("Languages", statBlock.languages)
                 TraitLine(
-                    "Caster level", "${statBlock.casterLevel.display} (${statBlock.casterAbility.display})",
-                    visible = statBlock.casterLevel != CasterLevel.NONE
+                    "Caster level", "${statBlock.spellSlots.display} (${statBlock.casterAbility.display})",
+                    visible = statBlock.spellSlots != CasterLevel.NONE
                 )
                 FlowRow {
                     val allSkills = statBlock.allSkills
@@ -152,18 +154,16 @@ private fun AbilityBlock(
 
 @Composable
 private fun Ability(statBlock: StatBlock, ability: Ability) {
-    val name = ability.name + ability.use.display
     when (ability) {
-        is Ability.Trait -> TraitLine(name, ability.description, singleLine = false)
-        is Ability.Attack -> Attack(statBlock, name, ability)
-        is Ability.Custom -> Custom(statBlock, name, ability)
-        is LegendaryAbility -> Legendary(statBlock, ability)
+        is Ability.Attack -> Attack(statBlock, ability)
+        is Ability.Trait -> Trait(statBlock, ability)
         else -> log.error { "No renderer for $ability" }
     }
 }
 
 @Composable
-fun Attack(statBlock: StatBlock, name: String, attack: Ability.Attack, expand: Boolean = true) {
+fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true, addToName: String = "") {
+    val name = attack.name
     val rangeText = listOfNotNull(
         attack.reach?.let { "reach $it ft." },
         attack.range?.let {
@@ -177,7 +177,7 @@ fun Attack(statBlock: StatBlock, name: String, attack: Ability.Attack, expand: B
     val damage = attack.damage + statBlock.modifierFor(attack.stat, false)
     FlowRow {
         val attackRoll = (1 d 20) + modifier
-        TextLine("$name:", Modifier.clickable {
+        TextLine("$name$addToName${attack.costDisplay()}:", Modifier.clickable {
             log(
                 LogEntry.Attack(
                     statBlock.name,
@@ -204,46 +204,49 @@ fun Attack(statBlock: StatBlock, name: String, attack: Ability.Attack, expand: B
 }
 
 @Composable
-fun Custom(statBlock: StatBlock, name: String, ability: Ability.Custom, expand: Boolean = true) {
-    Column {
-        Row {
-            if (ability.roll == null) {
-                TextLine(name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
-            } else {
-                Roller(
-                    name,
-                    ability.roll,
-                    statBlock.name,
-                    "${ability.name}: ${ability.roll.type}",
-                    LocalTextStyle.current.copy(fontWeight = FontWeight.Bold),
-                    false
-                )
+fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, addToName: String = "") {
+    val name = ability.name + addToName + ability.costDisplay()
+    @Composable fun content() {
+        AbilityName(ability, ability.roll, name, statBlock.name)
+        Use(ability.use)
+        Recharge(ability.recharge, ability.name, statBlock.name)
+    }
+    if (expand) {
+        Column {
+            Row {
+                content()
+                TextLine(":")
             }
-            if (ability.recharge != Recharge.NO) {
-                TextLine(" ")
-                Roller(
-                    "(Recharge ${ability.recharge.display})",
-                    1 d 6,
-                    statBlock.name,
-                    "${ability.name} recharge",
-                    twice = false
-                )
-            }
-            if (expand) TextLine(": ")
+            Text(ability.description)
         }
-        if (expand) Text(ability.description)
+    } else {
+        TooltipText(ability.description) {
+            FlowRow { content() } // TODO test if flow is OK
+        }
     }
 }
 
 @Composable
-private fun Legendary(statBlock: StatBlock, ability: LegendaryAbility) {
-    val real = ability.ability
-    val name = real.name + ability.costDisplay() + real.use.display
-    when (real) {
-        is Ability.Trait -> TraitLine(name, real.description, singleLine = false)
-        is Ability.Attack -> Attack(statBlock, name, real)
-        is Ability.Custom -> Custom(statBlock, name, real)
-        else -> log.error { "No renderer for $real (inside legendary)" }
+fun AbilityName(ability: Ability, roll: Dice?, name: String, creatureName: String) {
+    if (roll == null) {
+        TextLine(name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
+    } else {
+        Roller(name, roll, creatureName, "${ability.name}: ${roll.type}",
+            LocalTextStyle.current.copy(fontWeight = FontWeight.Bold), false)
+    }
+}
+
+@Composable
+fun Use(use: Use?) {
+    if (use is Use.Limited) {
+        TextLine(use.display)
+    }
+}
+
+@Composable
+fun Recharge(recharge: Recharge, abilityName: String, creatureName: String) {
+    if (recharge != Recharge.NO) {
+        Roller(" (Recharge ${recharge.display})", 1 d 6, creatureName, "$abilityName recharge", twice = false)
     }
 }
 

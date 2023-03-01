@@ -8,21 +8,29 @@ import org.hertsig.dnd.dice.d
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
-    JsonSubTypes.Type(Ability.Trait::class, name = "trait"),
     JsonSubTypes.Type(Ability.Attack::class, name = "attack"),
-    JsonSubTypes.Type(Ability.Custom::class, name = "custom"),
-    JsonSubTypes.Type(LegendaryAbility::class, name = "legendary"),
+    JsonSubTypes.Type(Ability.Trait::class, name = "trait"),
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 interface Ability {
     val name: String
     val use: Use
+    val legendaryCost: Int?
+
+    fun costDisplay() = if (legendaryCost ?: 0 > 1) " (costs $legendaryCost actions)" else ""
+    fun baseCopy(name: String = this.name, use: Use = this.use, legendaryCost: Int? = this.legendaryCost): Ability
 
     data class Trait(
         override val name: String = "",
+        val recharge: Recharge = Recharge.NO,
         val description: String = "",
+        val roll: Dice? = null,
         override val use: Use = Use.Unlimited,
-    ): Ability
+        override val legendaryCost: Int? = null,
+    ): Ability {
+        override fun baseCopy(name: String, use: Use, legendaryCost: Int?) =
+            copy(name = name, use = use, legendaryCost = legendaryCost)
+    }
 
     data class Attack(
         override val name: String = "",
@@ -36,17 +44,9 @@ interface Ability {
         val damage: Dice = (1 d 8)("piercing"),
         val extra: String = "",
         override val use: Use = Use.Unlimited,
-    ) : Ability
-
-    data class Custom(
-        override val name: String = "",
-        val recharge: Recharge = Recharge.NO,
-        val description: String = "",
-        val roll: Dice? = null,
-        override val use: Use = Use.Unlimited,
-    ): Ability
-}
-
-class LegendaryAbility(val ability: Ability, val cost: Int = 1): Ability by ability {
-    fun costDisplay() = if (cost == 1) "" else " (costs $cost actions)"
+        override val legendaryCost: Int? = null,
+    ) : Ability {
+        override fun baseCopy(name: String, use: Use, legendaryCost: Int?) =
+            copy(name = name, use = use, legendaryCost = legendaryCost)
+    }
 }

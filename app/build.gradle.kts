@@ -16,6 +16,8 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.materialIconsExtended)
 
+//    implementation("com.halilibo.compose-richtext:richtext-ui-material:0.16.0")
+
     implementation("com.fasterxml.jackson.core:jackson-core:2.14.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.1")
 

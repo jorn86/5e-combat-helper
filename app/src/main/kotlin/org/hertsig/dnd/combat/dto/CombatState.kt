@@ -14,7 +14,7 @@ sealed interface CombatEntry {
         override fun hashCode() = System.identityHashCode(this)
     }
 
-    open class StatBlockEntry(
+    open class GroupEntry(
         val statBlock: StatBlock,
         override val initiative: Int,
         val label: String = "",
@@ -31,6 +31,8 @@ sealed interface CombatEntry {
         initiative: Int,
         label: String = "",
         val currentHp: Int = statBlock.maxHitPoints,
-    ): StatBlockEntry(statBlock, initiative, label) {
+    ): GroupEntry(statBlock, initiative, label) {
     }
 }
+
+val CombatEntry?.statBlock get() = (this as? CombatEntry.GroupEntry)?.statBlock

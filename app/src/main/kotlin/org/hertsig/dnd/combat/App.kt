@@ -8,24 +8,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
-import org.hertsig.core.logger
+import org.hertsig.compose.registerExceptionHandler
 import org.hertsig.dnd.combat.dto.*
+import org.hertsig.dnd.combat.page.InitiativeList
 import java.util.*
 
-private val log = logger {}
 private val colors = lightColors(Color(0xff1775d1), Color(0xff63a3ff), Color(0xffcfff95), Color(0xff9ccc65))
 
 @OptIn(ExperimentalMaterialApi::class)
 fun main() {
-    Thread.setDefaultUncaughtExceptionHandler { _, e ->
-        log.error("Uncaught exception", e)
-        e.suppressed.forEach {
-            if (it.stackTrace.isNotEmpty()) log.error("Suppressed", it)
-        }
-    }
+    registerExceptionHandler()
 
     application {
-//    logEntries = remember { mutableStateListOf(LogEntry.Roll("Border test", "", Dice(listOf(4,6,8,10,12,20), 1).roll())) }
+//        logEntries = remember { mutableStateListOf(LogEntry.Roll("Border test", "", Dice(listOf(4,6,8,10,12,20), 1).roll())) }
         logEntries = remember { mutableStateListOf() }
         val state = rememberAppState()
 
@@ -41,14 +36,14 @@ fun main() {
             }
         }
 
-        if (state.current != null && state.initiative.isNotEmpty()) {
+        if (state.combat.current != null) {
             Window({}, rememberWindowState(
                 width = 300.dp,
                 height = 800.dp,
             ), title = "Initiative") {
                 CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
                     MaterialTheme(colors) {
-                        InitiativeList(state, playerView = true)
+                        InitiativeList(state.combat, playerView = true)
                     }
                 }
             }

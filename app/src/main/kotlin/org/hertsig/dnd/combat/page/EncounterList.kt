@@ -1,50 +1,45 @@
-package org.hertsig.dnd.combat
+package org.hertsig.dnd.combat.page
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.hertsig.compose.component.BasicDropdown
 import org.hertsig.compose.component.RowTextLine
 import org.hertsig.compose.component.ScrollableColumn
 import org.hertsig.dnd.combat.dto.AppState
-import org.hertsig.dnd.combat.dto.ChallengeRating
-import org.hertsig.dnd.combat.dto.StatBlock
+import org.hertsig.dnd.combat.dto.Encounter
+import org.hertsig.dnd.combat.service.rememberEncounters
 
 @Composable
-fun StatBlockList(state: AppState) {
-    Column(Modifier.width(250.dp).padding(8.dp, 8.dp, 12.dp, 8.dp), Arrangement.spacedBy(4.dp)) {
-        BasicDropdown(state.orderState, Modifier.weight(1f))
+fun EncounterList(state: AppState, modifier: Modifier) {
+    val encounters = rememberEncounters(state.statBlocks.statBlocks)
+    var active by remember { mutableStateOf(encounters.encounters.firstOrNull()) }
+    Column(modifier.width(250.dp).padding(8.dp, 8.dp, 12.dp, 8.dp), Arrangement.spacedBy(4.dp)) {
+//        BasicDropdown(state.orderState, Modifier.weight(1f))
         Button(
-            { state.new() },
+            { encounters.add(Encounter()) },
             Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondaryVariant)
         ) {
             RowTextLine("Add...", style = MaterialTheme.typography.subtitle1)
         }
         ScrollableColumn(Modifier.weight(1f), Arrangement.spacedBy(4.dp), PaddingValues(0.dp)) {
-            items(state.statBlocks, { Key(state.active, it) }) {
+            items(encounters.encounters) {
                 val colors = MaterialTheme.colors
-                val isCurrent by remember { derivedStateOf { it == state.active } }
+                val isCurrent by remember { derivedStateOf { it == active } }
                 val backgroundColor by remember { derivedStateOf { if (isCurrent) colors.primary else colors.secondary } }
                 Button(
-                    { state.navigateTo(it) },
+                    { active = it },
                     Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(backgroundColor),
                 ) {
                     RowTextLine(it.name, style = MaterialTheme.typography.subtitle1)
-                    if (it.challengeRating != ChallengeRating.NONE) RowTextLine("  (${it.challengeRating.display})")
                 }
             }
         }
     }
 }
-
-private data class Key(val active: StatBlock?, val self: StatBlock)

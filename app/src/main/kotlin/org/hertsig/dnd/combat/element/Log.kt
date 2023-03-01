@@ -1,4 +1,4 @@
-package org.hertsig.dnd.combat
+package org.hertsig.dnd.combat.element
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
@@ -19,6 +19,7 @@ import org.hertsig.compose.component.ScrollableColumn
 import org.hertsig.compose.component.TextLine
 import org.hertsig.core.error
 import org.hertsig.core.logger
+import org.hertsig.dnd.combat.dto.LogEntry
 
 private val log = logger {}
 
@@ -26,7 +27,7 @@ private val log = logger {}
 fun Log(logEntries: List<LogEntry>) {
     val listState = rememberLazyListState()
     LaunchedEffect(logEntries.size) { listState.scrollToItem(logEntries.size) }
-    ScrollableColumn(Modifier.width(300.dp), Arrangement.spacedBy(4.dp), vertical = listState) {
+    ScrollableColumn(Modifier.width(300.dp), Arrangement.spacedBy(4.dp), state = listState) {
         items(logEntries) {
             Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colors.primaryVariant) {
                 Row(Modifier.fillMaxWidth().padding(8.dp, 4.dp)) {
