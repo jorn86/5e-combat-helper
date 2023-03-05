@@ -4,13 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -20,6 +15,7 @@ import org.hertsig.compose.component.TextLine
 import org.hertsig.core.error
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.LogEntry
+import org.hertsig.dnd.dice.DieRolls
 
 private val log = logger {}
 
@@ -72,10 +68,25 @@ private fun AttackEntry(attack: LogEntry.Attack) {
                 }
             }
         }
-        Row {
-            RollResult(attack.damage, style = MaterialTheme.typography.h5, suffix = attack.damage.type)
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceAround) {
+            var damage by remember { mutableStateOf<DieRolls?>(null) }
+            damage.let {
+                if (it == null) {
+                    Button({ damage = attack.damage.roll() }) { TextLine("Hit") }
+                    if (attack.firstHit.isNatural20() || attack.secondHit.isNatural20()) {
+                        Button({ damage = attack.damage.doubleDice().roll() }) { TextLine("Crit") }
+                    }
+                } else {
+                    RollResult(it, style = MaterialTheme.typography.h5, suffix = attack.damage.type)
+                }
+            }
         }
         if (attack.text.isNotBlank()) TextLine(attack.text)
         if (attack.name.isNotBlank()) TextLine(attack.name)
     }
+}
+
+private fun DieRolls?.isNatural20(): Boolean {
+    val die = this?.dice?.singleOrNull() ?: return false
+    return die.size == 20 && die.result == 20
 }

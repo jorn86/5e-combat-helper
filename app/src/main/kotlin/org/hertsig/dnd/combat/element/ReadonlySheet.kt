@@ -178,12 +178,7 @@ fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true,
     FlowRow {
         val attackRoll = (1 d 20) + modifier
         TextLine("$name$addToName${attack.costDisplay()}:", Modifier.clickable {
-            log(
-                LogEntry.Attack(
-                    statBlock.name,
-                    name, attackRoll.roll(), attackRoll.roll(), damage.roll()
-                )
-            )
+            log(LogEntry.Attack(statBlock.name, name, attackRoll.roll(), attackRoll.roll(), damage))
         }, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
 //        TextLine(" $type, ", style = style)
         Roller("${modifier(modifier)} to hit, ", attackRoll, statBlock.name, name)

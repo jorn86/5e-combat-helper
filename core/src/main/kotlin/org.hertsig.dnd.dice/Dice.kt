@@ -6,10 +6,11 @@ data class Dice(private val sizes: List<Int>, val modifier: Int = 0, val type: S
     val average get() = sizes.sumOf { it + 1 } / 2.0 + modifier
     fun roll() = DieRolls(sizes.map { DieRoll.roll(it) }, modifier, type)
 
-    operator fun plus(dice: Dice) = copy(sizes = sizes + dice.sizes)
+    operator fun plus(dice: Dice) = Dice(sizes + dice.sizes, modifier + dice.modifier, type.ifBlank { dice.type })
     operator fun plus(modifier: Int) = copy(modifier = this.modifier + modifier)
     operator fun minus(modifier: Int) = copy(modifier = this.modifier - modifier)
     operator fun invoke(type: String) = copy(type = type)
+    fun doubleDice() = copy(sizes = sizes + sizes)
 
     fun asString(withAverage: Boolean = true) = sizes.groupBy { it }.map { (size, sizes) -> "${sizes.size}d$size" }
         .joinToString(" + ", postfix = "${modifier(modifier)}${average(withAverage)} $type").trim()
