@@ -34,22 +34,24 @@ class CombatState(
         }
     }
 
-    fun previousInitiative() {
+    tailrec fun previousInitiative() {
         if (entries.isEmpty()) return moveInitiative(null, Round.DECREMENT)
         when (val it = current) {
             null -> moveInitiative(entries.first(), Round.RESET)
             entries.first() -> moveInitiative(entries.last(), Round.DECREMENT)
             else -> moveInitiative(entries.previous(it))
         }
+        if (!current!!.active && entries.any { it.active }) previousInitiative()
     }
 
-    fun nextInitiative() {
+    tailrec fun nextInitiative() {
         if (entries.isEmpty()) return moveInitiative(null, Round.INCREMENT)
         when (val it = current) {
             null -> moveInitiative(entries.first(), Round.RESET)
             entries.last() -> moveInitiative(entries.first(), Round.INCREMENT)
             else -> moveInitiative(entries.next(it))
         }
+        if (!current!!.active && entries.any { it.active }) nextInitiative()
     }
 
     fun startCombat() {
@@ -64,6 +66,15 @@ class CombatState(
             Round.DECREMENT -> if (round > 1) round--
             Round.INCREMENT -> round++
             Round.NO_CHANGE -> {}
+        }
+    }
+
+    fun toggleActive(entry: CombatEntry) {
+        val index = entries.binarySearch(entry, initiativeOrder)
+        if (index < 0)  return
+        entry.toggleActive().let {
+            entriesState[index] = it
+            if (current == entry) current = it
         }
     }
 

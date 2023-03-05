@@ -3,6 +3,9 @@ package org.hertsig.dnd.combat.page
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -10,6 +13,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import org.hertsig.compose.component.IconButton
 import org.hertsig.compose.component.RowTextLine
@@ -28,17 +32,26 @@ fun InitiativeList(state: CombatState, modifier: Modifier = Modifier, showContro
             }
         }
 
+
         state.entries.forEach {
             val isCurrent = it == state.current
             Row(Modifier
                 .background(if (isCurrent) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.secondary, RoundedCornerShape(8.dp))
                 .fillMaxWidth().padding(8.dp, 4.dp), Arrangement.SpaceBetween) {
-                Row {
-                    var text = "%2d".format(it.initiative)
-                    if (!playerView || it is CombatEntry.Simple) text += " — ${it.name}"
-                    TextLine(text)
+                var text = "%2d".format(it.initiative)
+                if (!playerView || it is CombatEntry.Simple) text += " — ${it.name}"
+                TextLine(text, Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (showControls) {
+                        Checkbox(it.active, { _ -> state.toggleActive(it) }, Modifier.size(16.dp),
+                            colors = CheckboxDefaults.colors(MaterialTheme.colors.primary))
+                    } else if (!it.active) {
+                        Icon(painterResource("/skull.svg"), "Unconscious", Modifier.size(16.dp))
+                    }
+                    if (!playerView) {
+                        IconButton({ state.removeInitiative(it) }, Icons.Default.Close, iconSize = 16.dp)
+                    }
                 }
-                if (!playerView) IconButton({ state.removeInitiative(it) }, Icons.Default.Close, iconSize = 16.dp)
             }
         }
     }
