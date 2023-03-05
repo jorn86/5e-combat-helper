@@ -28,7 +28,7 @@ data class Dice(private val sizes: List<Int>, val modifier: Int = 0, val type: S
         }
 
         fun parse(string: String): Dice {
-            val (_, dice, modifier, type) = Regex("(.*?)([+-]\\s*\\d+)?(\\s+[A-Za-z\\s,&/()]*)").matchEntire(string)!!.groupValues
+            val (_, dice, modifier, type) = Regex("(.*?)([+-]\\s*\\d+)?(\\s+[A-Za-z\\s,&/()]*)?").matchEntire(string)!!.groupValues
             val sizes = dice.split("+").flatMap {
                 val (amount, size) = it.trim().split("d")
                 List(amount.trim().toInt()) { size.trim().toInt() }
