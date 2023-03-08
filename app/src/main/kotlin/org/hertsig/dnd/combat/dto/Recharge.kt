@@ -6,4 +6,8 @@ enum class Recharge(val fromValue: Int?, val display: String) {
     FIVE(5, "5-6"),
     SIX(6, "6"),
     ;
+
+    companion object {
+        fun forValue(value: Int) = values().single { it.fromValue == value }
+    }
 }

@@ -26,15 +26,19 @@ import org.hertsig.dnd.combat.Page
 import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parseOptional
+import org.hertsig.dnd.norr.Monster
+import org.hertsig.dnd.norr.getFromBestiary
+import org.hertsig.dnd.norr.updateStatBlock
 import java.util.*
 
 private val log = logger {}
 
 @Composable
-fun EditableSheet(page: Page.Edit, modifier: Modifier = Modifier) {
+fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifier) {
     val original = page.active
     page.updated = remember { mutableStateOf(original) }
     var updated by page.updated
+
     Column(modifier.padding(8.dp), Arrangement.spacedBy(4.dp)) {
         val name = remember { mutableStateOf(original.name) }
         val size = remember { mutableStateOf(original.size) }
@@ -51,7 +55,7 @@ fun EditableSheet(page: Page.Edit, modifier: Modifier = Modifier) {
         val senses = remember { mutableStateOf(original.senses) }
         val languages = remember { mutableStateOf(original.languages) }
         val casterLevel = remember { mutableStateOf(original.spellSlots) }
-        val casterAbility = remember { mutableStateOf(original.casterAbility) }
+        val casterAbility = remember { mutableStateOf(original.casterAbility ?: Stat.INTELLIGENCE) }
         val proficientSaves = remember { original.proficientSaves.toMutableStateList() }
         val proficientSkills = remember { original.proficientSkills.toMutableStateList() }
         val expertiseSkills = remember { original.expertiseSkills.toMutableStateList() }
@@ -62,10 +66,25 @@ fun EditableSheet(page: Page.Edit, modifier: Modifier = Modifier) {
         val legendaryActions = remember { original.legendaryActions.toMutableStateList() }
         val legendaryActionUses = remember { mutableStateOf(original.legendaryActionUses) }
 
+        var bestiaryEntry by remember { mutableStateOf<Monster?>(null) }
+        LaunchedEffect(name.value) { bestiaryEntry = getFromBestiary(name.value) }
+        fun loadFromBestiary() {
+            updated = updateStatBlock(bestiaryEntry ?: return, updated)
+            if (state.statBlocks.update(original, updated)) state.page = Page.Show(updated)
+        }
+
         ScrollableFlowColumn(16.dp, 16.dp) {
             Column(Modifier.padding(bottom = 16.dp), Arrangement.spacedBy(4.dp)) {
                 FormRow("Name") {
-                    BasicEditText(name, Modifier.weight(1f).autoFocus()) { updated = updated.copy(name = it) }
+                    BasicEditText(name, Modifier.weight(1f).autoFocus()) {
+                        updated = updated.copy(name = it)
+                    }
+                    Button(
+                        ::loadFromBestiary,
+                        Modifier.heightIn(1.dp),
+                        bestiaryEntry != null,
+                        contentPadding = PaddingValues(8.dp, 4.dp)
+                    ) { TextLine("Load") }
                 }
                 FormRow("Size") {
                     BasicDropdown(size, Modifier.weight(1f), onUpdate = { updated = updated.copy(size = it) })
@@ -116,7 +135,8 @@ fun EditableSheet(page: Page.Edit, modifier: Modifier = Modifier) {
                 }
                 FormRow("Spellcasting") {
                     BasicDropdown(casterLevel, Modifier.width(30.dp), onUpdate = {
-                        updated = updated.copy(spellSlots = it)
+                        updated = updated.copy(spellSlots = it,
+                            casterAbility = if (it == CasterLevel.NONE) null else casterAbility.value)
                     }) { it.display }
                     if (casterLevel.value != CasterLevel.NONE) {
                         BasicDropdown(casterAbility, Modifier.width(100.dp), onUpdate = {
@@ -255,7 +275,8 @@ private fun EditAttack(ability: Ability.Attack, save: (Ability?) -> Unit) {
     val extra = remember(ability) { mutableStateOf(ability.extra) }
 
     EditAbility(ability, save) {
-        BasicDropdown(stat, listOf(null, Stat.STRENGTH, Stat.DEXTERITY), Modifier.width(90.dp), onUpdate = {
+        val attackStats = listOf(null, Stat.STRENGTH, Stat.DEXTERITY, Stat.INTELLIGENCE, Stat.WISDOM, Stat.CHARISMA)
+        BasicDropdown(stat, attackStats, Modifier.width(90.dp), onUpdate = {
             save(ability.copy(stat = it))
         }) { it?.display ?: "Custom" }
         BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { save(ability.copy(modifier = it)) }
@@ -350,5 +371,7 @@ private fun EditUse(use: MutableState<Use>, onUpdate: (Use) -> Unit) {
         onUpdate = { onUpdate(create(amount.value, it)) })
 }
 
-private inline fun <reified E : Enum<E>> Collection<E>.toEnumSet() =
+inline fun <reified E : Enum<E>> Collection<E>.toEnumSet() =
     if (isEmpty()) EnumSet.noneOf(E::class.java) else EnumSet.copyOf(this)
+
+fun String?.cap() = orEmpty().replaceFirstChar { it.uppercase() }

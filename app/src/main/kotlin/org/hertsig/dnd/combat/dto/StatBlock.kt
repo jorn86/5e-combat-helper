@@ -33,7 +33,7 @@ data class StatBlock(
     val reactions: List<Ability> = emptyList(),
     val legendaryActions: List<Ability> = emptyList(),
     val legendaryActionUses: Int = 0,
-    val casterAbility: Stat = Stat.INTELLIGENCE,
+    val casterAbility: Stat? = null,
     val spellSlots: CasterLevel = CasterLevel.NONE,
 ) {
     fun copy(stat: Stat, value: Int) = when (stat) {

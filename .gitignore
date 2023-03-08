@@ -1,5 +1,8 @@
 .gradle/
 build/
+wix311/
 
 .idea/
 data/*.json
+
+app/src/test/kotlin/org/hertsig/dnd/combat/norr/*

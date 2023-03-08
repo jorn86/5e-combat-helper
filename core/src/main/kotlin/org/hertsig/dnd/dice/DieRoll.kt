@@ -1,6 +1,6 @@
 package org.hertsig.dnd.dice
 
-import java.util.Random
+import java.util.*
 
 var defaultRandom = Random()
 
@@ -9,7 +9,7 @@ data class DieRoll(val size: Int, val result: Int) {
     override fun toString() = "d$size=$result"
 
     companion object {
-        fun roll(size: Int, modifier: Int = 0, random: Random = defaultRandom) = DieRoll(size, random.nextInt(size) + 1)
+        fun roll(size: Int, random: Random = defaultRandom) = DieRoll(size, random.nextInt(size) + 1)
     }
 }
 

@@ -44,7 +44,7 @@ fun parse(string: String): MultiDice {
     return total
 }
 
-private val dice = Regex("(\\d)+d(\\d+)")
+private val dice = Regex("(\\d+)?d(\\d+)")
 private val modifier = Regex("(\\d+)")
 private fun parseToken(text: String): DieToken? {
     if (text.isBlank()) return null
@@ -52,7 +52,7 @@ private fun parseToken(text: String): DieToken? {
     else if (text == "-") return DieToken.Minus
 
     val diceMatch = dice.matchEntire(text)
-    if (diceMatch != null) return DieToken.Dice(diceMatch.groupValues[1].toInt(), diceMatch.groupValues[2].toInt())
+    if (diceMatch != null) return DieToken.Dice(diceMatch.groupValues[1].toIntOrNull() ?: 1, diceMatch.groupValues[2].toInt())
 
     val modifierMatch = modifier.matchEntire(text)
     if (modifierMatch != null) return DieToken.Modifier(modifierMatch.groupValues[1].toInt())

@@ -1,7 +1,8 @@
 package org.hertsig.dnd.dice
 
-data class MultiDice(private val main: Dice, private val extra: List<Dice>) {
+data class MultiDice(val main: Dice, val extra: List<Dice>) {
     constructor(main:Dice, vararg other: Dice): this(main, other.toList())
+    constructor(all: List<Dice>): this(all.first(), all.subList(1, all.size))
 
     val average get() = main.average + extra.sumOf { it.average }
     private val all get() = listOf(main) + extra
@@ -11,6 +12,7 @@ data class MultiDice(private val main: Dice, private val extra: List<Dice>) {
 
     operator fun plus(dice: Dice) = if (!main.isRelevant()) MultiDice(dice, extra) else MultiDice(main, extra + dice).reduce()
     operator fun plus(modifier: Int) = MultiDice(main + modifier, extra)
+    operator fun minus(modifier: Int) = MultiDice(main - modifier, extra)
     operator fun times(multiplier: Int) = MultiDice(main * multiplier, extra.map { it * multiplier })
 
     fun asString(withAverage: Boolean = false): String {

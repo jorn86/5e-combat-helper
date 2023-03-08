@@ -26,10 +26,10 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "org.hertsig.dnd.initiative.AppKt"
+        mainClass = "org.hertsig.dnd.combat.AppKt"
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
-            packageName = "dnd.initiative"
+            packageName = "dnd.combat"
             packageVersion = "1.0.0"
         }
     }

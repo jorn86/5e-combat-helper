@@ -12,7 +12,7 @@ import org.hertsig.dnd.dice.MultiDice
     JsonSubTypes.Type(Ability.Trait::class, name = "trait"),
 )
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-interface Ability {
+sealed interface Ability {
     val name: String
     val use: Use
     val legendaryCost: Int?

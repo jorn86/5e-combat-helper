@@ -4,8 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 fun rememberCasterState(level: CasterLevel): CasterState {
@@ -21,6 +19,7 @@ fun rememberCasterState(level: CasterLevel): CasterState {
     return remember { CasterState(level, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth) }
 }
 
+// tracks *used* slots not *available* slots
 class CasterState(
     val casterLevel: CasterLevel,
     val first: MutableState<Int>,
@@ -35,29 +34,29 @@ class CasterState(
 ) {
     fun use(level: Int) {
         when (level) {
-            1 -> first.value = min(casterLevel.first, first.value + 1)
-            2 -> second.value = min(casterLevel.second, second.value + 1)
-            3 -> third.value = min(casterLevel.third, third.value + 1)
-            4 -> fourth.value = min(casterLevel.fourth, fourth.value + 1)
-            5 -> fifth.value = min(casterLevel.fifth, fifth.value + 1)
-            6 -> sixth.value = min(casterLevel.sixth, sixth.value + 1)
-            7 -> seventh.value = min(casterLevel.seventh, seventh.value + 1)
-            8 -> eighth.value = min(casterLevel.eighth, eighth.value + 1)
-            9 -> ninth.value = min(casterLevel.ninth, ninth.value + 1)
+            1 -> first.use(casterLevel.first)
+            2 -> second.use(casterLevel.second)
+            3 -> third.use(casterLevel.third)
+            4 -> fourth.use(casterLevel.fourth)
+            5 -> fifth.use(casterLevel.fifth)
+            6 -> sixth.use(casterLevel.sixth)
+            7 -> seventh.use(casterLevel.seventh)
+            8 -> eighth.use(casterLevel.eighth)
+            9 -> ninth.use(casterLevel.ninth)
         }
     }
 
     fun reset(level: Int) {
         when (level) {
-            1 -> first.value = max(0, first.value - 1)
-            2 -> second.value = max(0, second.value - 1)
-            3 -> third.value = max(0, third.value - 1)
-            4 -> fourth.value = max(0, fourth.value - 1)
-            5 -> fifth.value = max(0, fifth.value - 1)
-            6 -> sixth.value = max(0, sixth.value - 1)
-            7 -> seventh.value = max(0, seventh.value - 1)
-            8 -> eighth.value = max(0, eighth.value - 1)
-            9 -> ninth.value = max(0, ninth.value - 1)
+            1 -> first.unUse()
+            2 -> second.unUse()
+            3 -> third.unUse()
+            4 -> fourth.unUse()
+            5 -> fifth.unUse()
+            6 -> sixth.unUse()
+            7 -> seventh.unUse()
+            8 -> eighth.unUse()
+            9 -> ninth.unUse()
         }
     }
 
@@ -71,6 +70,14 @@ class CasterState(
         seventh.value = 0
         eighth.value = 0
         ninth.value = 0
+    }
+
+    private fun MutableState<Int>.use(total: Int) {
+        value = (value + 1).coerceAtMost(total)
+    }
+
+    private fun MutableState<Int>.unUse() {
+        value = (value - 1).coerceAtLeast(0)
     }
 }
 
@@ -107,7 +114,36 @@ enum class CasterLevel(
     EIGHTEEN(4, 3, 3, 3, 3, 1, 1, 1, 1),
     NINETEEN(4, 3, 3, 3, 3, 2, 1, 1, 1),
     TWENTY(4, 3, 3, 3, 3, 2, 2, 1, 1),
+
+    WARLOCK_01(1),
+    WARLOCK_02(2),
+    WARLOCK_03(0, 2),
+    WARLOCK_05(0, 0, 2),
+    WARLOCK_07(0, 0, 0, 2),
+    WARLOCK_09(0, 0, 0, 0, 2),
+    WARLOCK_11(0, 0, 0, 0, 3),
+    WARLOCK_17(0, 0, 0, 0, 4),
     ;
 
     val display = displayOverride ?: ordinal.toString()
+
+    companion object {
+        operator fun invoke(level: Int, warlock: Boolean = false): CasterLevel {
+            require(level in (0..20)) { "No CasterLevel entry for $level" }
+            if (warlock) {
+                return when (level) {
+                    1 -> WARLOCK_01
+                    2 -> WARLOCK_02
+                    in 3..4 -> WARLOCK_03
+                    in 5..6 -> WARLOCK_05
+                    in 7..8 -> WARLOCK_07
+                    in 9..10 -> WARLOCK_09
+                    in 11..16 -> WARLOCK_11
+                    in 17..20 -> WARLOCK_17
+                    else -> NONE
+                }
+            }
+            return values()[level]
+        }
+    }
 }

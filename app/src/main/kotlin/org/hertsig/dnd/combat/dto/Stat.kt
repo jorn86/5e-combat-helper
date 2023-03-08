@@ -51,4 +51,4 @@ val StatBlock.intMod get() = mod(intelligence)
 val StatBlock.wisMod get() = mod(wisdom)
 val StatBlock.chaMod get() = mod(charisma)
 
-private fun mod(score: Int) = score / 2 - 5
+fun mod(score: Int) = score / 2 - 5

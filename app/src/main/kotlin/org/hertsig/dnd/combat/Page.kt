@@ -46,7 +46,7 @@ sealed interface Page {
             BarButton(Icons.Default.FileCopy) { state.page = Edit(state.statBlocks.copy(active)) }
             BarButton(Icons.Default.Save) { state.statBlocks.save() }
             BarButton(Icons.Default.Edit) { state.page = Edit(active) }
-            BarButton(Icons.Default.Delete) { state.statBlocks.delete(active) }
+            BarButton(Icons.Default.Delete) { state.statBlocks.delete(active) } // TODO change page
         }
 
         @Composable
@@ -73,7 +73,7 @@ sealed interface Page {
                 }
             }
             BarButton(Icons.Default.Cancel) { state.page = Show(active) }
-            BarButton(Icons.Default.Delete) { state.statBlocks.delete(active) }
+            BarButton(Icons.Default.Delete) { state.statBlocks.delete(active) } // TODO change page
         }
 
         @Composable
@@ -83,7 +83,7 @@ sealed interface Page {
 
         @Composable
         override fun RowScope.drawPage(state: AppState) {
-            EditableSheet(this@Edit, Modifier.weight(1f))
+            EditableSheet(state, this@Edit, Modifier.weight(1f))
         }
     }
 

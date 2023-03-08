@@ -15,7 +15,8 @@ data class Dice(val sizes: Collection<Int>, val modifier: Int = 0, val type: Str
     operator fun times(multiplier: Int) = Dice(sizes * multiplier, modifier * multiplier, type)
     operator fun invoke(type: String) = Dice(sizes, modifier, type.ifBlank { this.type })
 
-    fun asString(withAverage: Boolean = false): String {
+    fun asString(withAverage: Boolean = false, short: Boolean = false): String {
+        if (short && sizes.size == 1 && modifier == 0 && type.isEmpty()) return "d${sizes.single()}"
         var value = sizes.groupBy { it }.map { (size, sizes) -> "${sizes.size}d$size" }.joinToString(" + ")
         if (value.isBlank()) value = modifier.toString() else value += modifier(modifier)
         val average = if (withAverage) "(${average.toInt()})" else ""

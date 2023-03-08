@@ -83,7 +83,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
 
                 TraitLine("Languages", statBlock.languages)
                 TraitLine(
-                    "Caster level", "${statBlock.spellSlots.display} (${statBlock.casterAbility.display})",
+                    "Caster level", "${statBlock.spellSlots.display} (${statBlock.casterAbility?.display})",
                     visible = statBlock.spellSlots != CasterLevel.NONE
                 )
                 FlowRow {

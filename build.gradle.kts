@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm")
 }
@@ -19,7 +21,20 @@ subprojects {
         testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
     }
 
+    kotlin {
+        jvmToolchain {
+            languageVersion.set(JavaLanguageVersion.of("17"))
+        }
+    }
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "17"
+            freeCompilerArgs += "-Xjvm-default=all"
+        }
+    }
+
     tasks.named<Test>("test") {
         useJUnitPlatform()
+        systemProperties["bestiaryFolder"] = System.getProperty("bestiaryFolder")
     }
 }

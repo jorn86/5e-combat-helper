@@ -40,7 +40,13 @@ enum class ChallengeRating(val value: Float, val xp: Int, val display: String) {
     constructor(value: Int, xp: Int): this(value.toFloat(), xp, value.toString())
 
     companion object {
-        operator fun invoke(value: Int) = values().single { it.value == value.toFloat() }
+        operator fun invoke(value: Int) = values().last { it.value == value.toFloat() }
+        operator fun invoke(value: String) = when (value) {
+            "1/8" -> EIGHTH
+            "1/4" -> QUARTER
+            "1/2" -> HALF
+            else -> invoke(value.toInt())
+        }
     }
 }
 
