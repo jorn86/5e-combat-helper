@@ -29,7 +29,7 @@ import org.hertsig.dnd.combat.component.displayForEach
 import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.log
-import org.hertsig.dnd.dice.Dice
+import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.d
 
 private val log = logger {}
@@ -90,7 +90,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                     val allSkills = statBlock.allSkills
                     TraitLine("Skills", visible = allSkills.isNotEmpty())
                     allSkills.displayForEach({ " ${it.display} (${modifier(statBlock.modifierFor(it))})" }) { text, it ->
-                        Roller(text, (1 d 20) + statBlock.modifierFor(it), statBlock.name)
+                        Roller(text, MultiDice.D20 + statBlock.modifierFor(it), statBlock.name)
                     }
                 }
             }
@@ -121,14 +121,14 @@ private fun AbilityScore(ability: String, statBlock: StatBlock, stat: Stat) {
         val modifier = statBlock.modifiers[stat]
         val modifierText = modifier(modifier)
         Roller(
-            statBlock.scores[stat].toString(), (1 d 20) + modifier, statBlock.name,
+            statBlock.scores[stat].toString(), MultiDice.D20 + modifier, statBlock.name,
             "${stat.display} ($modifierText)", MaterialTheme.typography.h3
         )
 
         val saveModifier = statBlock.saveModifierFor(stat)
         val saveModifierText = modifier(saveModifier)
         Roller(
-            "Save $saveModifierText", (1 d 20) + saveModifier, statBlock.name,
+            "Save $saveModifierText", MultiDice.D20 + saveModifier, statBlock.name,
             "${stat.display} saving throw ($saveModifierText)"
         )
     }
@@ -173,10 +173,10 @@ fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true,
             text
         }
     ).joinToString(" or ")
-    val modifier = statBlock.modifierFor(attack.stat, attack.proficient) + attack.modifier
+    val modifier = statBlock.modifierFor(attack.stat, true) + attack.modifier
     val damage = attack.damage + statBlock.modifierFor(attack.stat, false)
     FlowRow {
-        val attackRoll = (1 d 20) + modifier
+        val attackRoll = MultiDice.D20 + modifier
         TextLine("$name$addToName${attack.costDisplay()}:", Modifier.clickable {
             log(LogEntry.Attack(statBlock.name, name, attackRoll.roll(), attackRoll.roll(), damage))
         }, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
@@ -184,16 +184,16 @@ fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true,
         Roller("${modifier(modifier)} to hit, ", attackRoll, statBlock.name, name)
         TextLine("$rangeText. ")
 //        TextLine("${attack.target}. ")
-        val hitText = "Hit: $damage damage"
+        val hitText = "Hit: ${damage.asString(true)} damage"
         if (attack.extra.isNotBlank() && expand) {
-            Roller("$hitText, ", damage, statBlock.name, "$name: ${damage.type} damage", LocalTextStyle.current, false)
+            Roller("$hitText, ", damage, statBlock.name, "$name damage", LocalTextStyle.current, false)
             Text(attack.extra)
         } else if (attack.extra.isNotBlank()) {
             TooltipText("$hitText, ${attack.extra}") {
-                Roller(hitText, damage, statBlock.name, "$name: ${damage.type} damage", LocalTextStyle.current, false)
+                Roller(hitText, damage, statBlock.name, "$name damage", LocalTextStyle.current, false)
             }
         } else {
-            Roller(hitText, damage, statBlock.name, "$name: ${damage.type} damage", LocalTextStyle.current, false)
+            Roller(hitText, damage, statBlock.name, "$name damage", LocalTextStyle.current, false)
         }
     }
 }
@@ -222,11 +222,11 @@ fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, 
 }
 
 @Composable
-fun AbilityName(ability: Ability, roll: Dice?, name: String, creatureName: String) {
+fun AbilityName(ability: Ability, roll: MultiDice?, name: String, creatureName: String) {
     if (roll == null) {
         TextLine(name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
     } else {
-        Roller(name, roll, creatureName, "${ability.name}: ${roll.type}",
+        Roller(name, roll, creatureName, ability.name,
             LocalTextStyle.current.copy(fontWeight = FontWeight.Bold), false)
     }
 }
@@ -241,7 +241,7 @@ fun Use(use: Use?) {
 @Composable
 fun Recharge(recharge: Recharge, abilityName: String, creatureName: String) {
     if (recharge != Recharge.NO) {
-        Roller(" (Recharge ${recharge.display})", 1 d 6, creatureName, "$abilityName recharge", twice = false)
+        Roller(" (Recharge ${recharge.display})", MultiDice(1 d 6), creatureName, "$abilityName recharge", twice = false)
     }
 }
 

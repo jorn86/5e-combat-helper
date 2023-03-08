@@ -24,7 +24,8 @@ import org.hertsig.core.error
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.Page
 import org.hertsig.dnd.combat.dto.*
-import org.hertsig.dnd.dice.Dice
+import org.hertsig.dnd.dice.MultiDice
+import org.hertsig.dnd.dice.parseOptional
 import java.util.*
 
 private val log = logger {}
@@ -210,11 +211,18 @@ private fun AbilityBlock(
         HorizontalDivider()
         Column(Modifier.padding(vertical = 4.dp), Arrangement.spacedBy(4.dp)) {
             val defaultCost = if (legendary) 1 else null
-            abilities.forEachIndexed { index, it ->
-                EditSingleAbility(it) {
-                    if (it == null) abilities.removeAt(index) else abilities[index] = it
-                    save(abilities.toList())
+                abilities.forEachIndexed { index, it ->
+                val saveSingle: (Ability?) -> Unit = remember(abilities, index, it) {
+                    {
+                        if (it == null) {
+                            abilities.removeAt(index)
+                        } else {
+                            abilities[index] = it
+                        }
+                        save(abilities.toList())
+                    }
                 }
+                EditSingleAbility(it, saveSingle)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 // Don't call save() yet when adding empty new abilities
@@ -240,11 +248,9 @@ private fun EditSingleAbility(ability: Ability, save: (Ability?) -> Unit) {
 private fun EditAttack(ability: Ability.Attack, save: (Ability?) -> Unit) {
     val stat = remember(ability) { mutableStateOf(ability.stat) }
     val modifier = remember(ability) { mutableStateOf(ability.modifier) }
-//    val proficient = remember(ability) { mutableStateOf(ability.proficient) }
     val reach = remember(ability) { mutableStateOf(ability.reach ?: 0) }
     val range = remember(ability) { mutableStateOf(ability.range ?: 0) }
     val longRange = remember(ability) { mutableStateOf(ability.longRange ?: 0) }
-//    val target = remember(ability) { mutableStateOf(ability.target) }
     val damage = remember(ability) { mutableStateOf(ability.damage) }
     val extra = remember(ability) { mutableStateOf(ability.extra) }
 
@@ -255,12 +261,12 @@ private fun EditAttack(ability: Ability.Attack, save: (Ability?) -> Unit) {
         BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { save(ability.copy(modifier = it)) }
         // TODO nicer UI for combined melee / ranged
         TextLine("Reach")
-        BasicEditNumber(reach, 0, 25, 5, 36.dp, "ft.") { save(ability.copy(reach = it)) }
+        BasicEditNumber(reach, 0, 25, 5, 36.dp, "ft.") { save(ability.copy(reach = it.takeIf { it > 0 })) }
         TextLine("Range")
-        BasicEditNumber(range, 0, 300, 5, 36.dp, "ft.") { save(ability.copy(range = it)) }
+        BasicEditNumber(range, 0, 300, 5, 36.dp, "ft.") { save(ability.copy(range = it.takeIf { it > 0 })) }
         TextLine("/")
-        BasicEditNumber(longRange, 0, 600, 5, 36.dp, "ft.") { save(ability.copy(longRange = it)) }
-        EditDamage(damage.value) {
+        BasicEditNumber(longRange, 0, 600, 5, 36.dp, "ft.") { save(ability.copy(longRange = it.takeIf { it > 0 })) }
+        EditRoll(damage.value) {
             if (it != null) {
                 damage.value = it
                 save(ability.copy(damage = it))
@@ -277,7 +283,7 @@ private fun EditCustom(ability: Ability.Trait, save: (Ability?) -> Unit) {
 
     EditAbility(ability, save) {
         BasicDropdown(recharge, Modifier.width(30.dp), onUpdate = { save(ability.copy(recharge = it)) }) { it.display }
-        EditDamage(ability.roll) { save(ability.copy(roll = it)) }
+        EditRoll(ability.roll) { save(ability.copy(roll = it)) }
         BasicEditText(description, Modifier.fillMaxWidth(), "Description") { save(ability.copy(description = it)) }
     }
 }
@@ -315,18 +321,22 @@ private fun EditAbility(
 }
 
 @Composable
-private fun EditDamage(initial: Dice?, modifier: Modifier = Modifier, width: Dp = 200.dp, onUpdate: (Dice?) -> Unit) {
+private fun EditRoll(initial: MultiDice?, modifier: Modifier = Modifier, width: Dp = 200.dp, onUpdate: (MultiDice?) -> Unit) {
     val display = remember { mutableStateOf(initial?.asString(false).orEmpty()) }
-    var error by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf("") }
     BasicEditText(display, modifier.width(width), "Damage") {
         error = try {
-            onUpdate(Dice.parseOptional(it))
-            false
+            onUpdate(parseOptional(it))
+            ""
         } catch (e: RuntimeException) {
-            true
+            e.message ?: "Parse error"
         }
     }
-    if (error) Icon(Icons.Default.Error, "Parse error", Modifier.size(16.dp), MaterialTheme.colors.error)
+    if (error.isNotBlank()) {
+        TooltipText(error) {
+            Icon(Icons.Default.Error, "Parse error", Modifier.size(16.dp), MaterialTheme.colors.error)
+        }
+    }
 }
 
 @Composable

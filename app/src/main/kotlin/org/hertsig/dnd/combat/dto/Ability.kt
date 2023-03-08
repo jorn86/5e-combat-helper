@@ -4,14 +4,14 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import org.hertsig.dnd.dice.Dice
-import org.hertsig.dnd.dice.d
+import org.hertsig.dnd.dice.MultiDice
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(Ability.Attack::class, name = "attack"),
     JsonSubTypes.Type(Ability.Trait::class, name = "trait"),
 )
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 interface Ability {
     val name: String
     val use: Use
@@ -24,7 +24,7 @@ interface Ability {
         override val name: String = "",
         val recharge: Recharge = Recharge.NO,
         val description: String = "",
-        val roll: Dice? = null,
+        val roll: MultiDice? = null,
         override val use: Use = Use.Unlimited,
         override val legendaryCost: Int? = null,
     ): Ability {
@@ -36,12 +36,10 @@ interface Ability {
         override val name: String = "",
         val stat: Stat? = Stat.DEXTERITY,
         val modifier: Int = 0,
-        val proficient: Boolean = true,
         val reach: Int? = null,
         val range: Int? = null,
         val longRange: Int? = null,
-        val target: String = "one target",
-        val damage: Dice = (1 d 8)("piercing"),
+        val damage: MultiDice = MultiDice(Dice.NONE),
         val extra: String = "",
         override val use: Use = Use.Unlimited,
         override val legendaryCost: Int? = null,

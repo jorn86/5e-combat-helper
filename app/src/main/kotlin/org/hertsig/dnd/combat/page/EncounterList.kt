@@ -21,7 +21,7 @@ fun EncounterList(state: AppState, modifier: Modifier) {
     Column(modifier.width(250.dp).padding(8.dp, 8.dp, 12.dp, 8.dp), Arrangement.spacedBy(4.dp)) {
 //        BasicDropdown(state.orderState, Modifier.weight(1f))
         Button(
-            { encounters.add(Encounter()) },
+            { Encounter().let { encounters.add(it); active = it } },
             Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondaryVariant)
         ) {

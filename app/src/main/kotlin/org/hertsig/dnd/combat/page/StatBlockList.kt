@@ -30,7 +30,7 @@ fun StatBlockList(
         Column(Modifier.padding(padding), Arrangement.spacedBy(4.dp)) {
             BasicDropdown(state.statBlocks.orderState, Modifier.weight(1f))
             Button(
-                { state.statBlocks.new() },
+                { state.page = Page.Edit(state.statBlocks.new()) },
                 Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondaryVariant)
             ) {

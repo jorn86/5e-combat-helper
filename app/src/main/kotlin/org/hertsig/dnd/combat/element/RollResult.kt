@@ -21,27 +21,40 @@ import org.hertsig.compose.component.TextLine
 import org.hertsig.dnd.combat.component.DiceShapes
 import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.dice.DieRoll
-import org.hertsig.dnd.dice.DieRolls
+import org.hertsig.dnd.dice.MultiDieRolls
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RowScope.RollResult(
-    roll: DieRolls,
+    roll: MultiDieRolls,
     modifier: Modifier = Modifier,
     style: TextStyle = LocalTextStyle.current,
     suffix: String = ""
 ) {
     TooltipArea({
-        CompositionLocalProvider(LocalTextStyle.provides(MaterialTheme.typography.body1)) {
-            Row {
-                roll.dice.forEach { Die(it, it.size) }
-                if (roll.modifier != 0) TextWithIcon(modifier(roll.modifier))
+        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body1) {
+            Row(Modifier.background(MaterialTheme.colors.background)) {
+                roll.rolls.forEach {
+                    Column {
+                        Row {
+                            it.dice.forEach { die -> Die(die, die.size) }
+                            if (it.modifier != 0) TextWithIcon(modifier(it.modifier))
+                        }
+                        if (it.type.isNotBlank() || roll.rolls.size > 1) {
+                            TextLine(
+                                "${it.total} ${it.type}",
+                                Modifier.align(Alignment.CenterHorizontally).padding(2.dp),
+                                MaterialTheme.colors.onBackground,
+                            )
+                        }
+                    }
+                }
             }
         }
     }) {
         val color = when {
-            roll.dice.all { it.result == 1 } -> Color.Red
-            roll.dice.all { it.result == it.size } -> Color.Green
+            roll.allDice.all { it.result == 1 } -> Color.Red
+            roll.allDice.all { it.result == it.size } -> Color.Green
             else -> MaterialTheme.colors.onPrimary
         }
         RowTextLine("${roll.total} $suffix", modifier, color, style, TextAlign.Center)

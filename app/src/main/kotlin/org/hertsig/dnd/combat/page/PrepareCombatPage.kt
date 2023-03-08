@@ -14,7 +14,8 @@ import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.log
 import org.hertsig.dnd.dice.DieRoll
 import org.hertsig.dnd.dice.DieRolls
-import org.hertsig.dnd.dice.d
+import org.hertsig.dnd.dice.MultiDice
+import org.hertsig.dnd.dice.MultiDieRolls
 
 @Composable
 fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
@@ -23,7 +24,7 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
         var label by labelState
         val focusRequester = remember { FocusRequester() }
 
-        fun finish(name: String, roll: DieRolls, entry: CombatEntry) {
+        fun finish(name: String, roll: MultiDieRolls, entry: CombatEntry) {
             log(LogEntry.Roll(name, "Initiative", roll))
             state.combat.addInitiative(entry)
             label = ""
@@ -36,7 +37,7 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
             }
             items(state.statBlocks.statBlocks) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val initiativeRoll = (1 d 20) + it.modifierFor(Stat.DEXTERITY)
+                    val initiativeRoll = MultiDice.D20 + it.modifierFor(Stat.DEXTERITY)
                     RowTextLine(it.name, Modifier.width(200.dp))
                     Button({
                         val roll = initiativeRoll.roll()
@@ -68,7 +69,7 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
                     BasicEditNumber(initiativeModifierState, -5, 10)
                 }
                 Button({
-                    finish(label, DieRolls(listOf(DieRoll(20, initiative - initiativeModifier)), initiativeModifier),
+                    finish(label, MultiDieRolls(DieRolls(listOf(DieRoll(20, initiative - initiativeModifier)), initiativeModifier)),
                         CombatEntry.Simple(label, initiative, initiativeModifier))
                 }) { TextLine("Simple") }
                 RowTextLine("1d20 + $initiativeModifier = $initiative")

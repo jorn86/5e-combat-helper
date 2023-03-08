@@ -8,10 +8,10 @@ import androidx.compose.ui.text.TextStyle
 import org.hertsig.compose.component.TextLine
 import org.hertsig.dnd.combat.dto.LogEntry
 import org.hertsig.dnd.combat.log
-import org.hertsig.dnd.dice.Dice
+import org.hertsig.dnd.dice.MultiDice
 
 @Composable
-fun Roller(text: String, dice: Dice, name: String, rollText: String = text, style: TextStyle = LocalTextStyle.current, twice: Boolean = true) {
+fun Roller(text: String, dice: MultiDice, name: String, rollText: String = text, style: TextStyle = LocalTextStyle.current, twice: Boolean = true) {
     TextLine(text, Modifier.clickable {
         log(LogEntry.Roll(name, rollText, dice.roll(), if (twice) dice.roll() else null))
     }, style = style)

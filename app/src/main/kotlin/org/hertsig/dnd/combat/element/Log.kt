@@ -15,7 +15,7 @@ import org.hertsig.compose.component.TextLine
 import org.hertsig.core.error
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.LogEntry
-import org.hertsig.dnd.dice.DieRolls
+import org.hertsig.dnd.dice.MultiDieRolls
 
 private val log = logger {}
 
@@ -42,7 +42,7 @@ fun Log(logEntries: List<LogEntry>) {
 @Composable
 private fun RollEntry(roll: LogEntry.Roll) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        CompositionLocalProvider(LocalTextStyle.provides(MaterialTheme.typography.h4)) {
+        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h4) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
                 RollResult(roll.first, Modifier.sizeIn(minWidth = 70.dp))
                 roll.second?.let {
@@ -59,7 +59,7 @@ private fun RollEntry(roll: LogEntry.Roll) {
 @Composable
 private fun AttackEntry(attack: LogEntry.Attack) {
     Column(Modifier.fillMaxWidth(), Arrangement.spacedBy(2.dp), Alignment.CenterHorizontally) {
-        CompositionLocalProvider(LocalTextStyle.provides(MaterialTheme.typography.h4)) {
+        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h4) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
                 RollResult(attack.firstHit, Modifier.sizeIn(minWidth = 70.dp))
                 attack.secondHit?.let {
@@ -69,15 +69,16 @@ private fun AttackEntry(attack: LogEntry.Attack) {
             }
         }
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceAround) {
-            var damage by remember { mutableStateOf<DieRolls?>(null) }
+            var damage by remember { mutableStateOf<MultiDieRolls?>(null) }
             damage.let {
                 if (it == null) {
                     Button({ damage = attack.damage.roll() }) { TextLine("Hit") }
-                    if (attack.firstHit.isNatural20() || attack.secondHit.isNatural20()) {
-                        Button({ damage = attack.damage.doubleDice().roll() }) { TextLine("Crit") }
+                    val critDamage = attack.damage.doubleDice()
+                    if ((attack.firstHit.isNatural20() || attack.secondHit.isNatural20()) && critDamage != attack.damage) {
+                        Button({ damage = critDamage.roll() }) { TextLine("Crit") }
                     }
                 } else {
-                    RollResult(it, style = MaterialTheme.typography.h5, suffix = attack.damage.type)
+                    RollResult(it, style = MaterialTheme.typography.h5)
                 }
             }
         }
@@ -86,7 +87,7 @@ private fun AttackEntry(attack: LogEntry.Attack) {
     }
 }
 
-private fun DieRolls?.isNatural20(): Boolean {
-    val die = this?.dice?.singleOrNull() ?: return false
+private fun MultiDieRolls?.isNatural20(): Boolean {
+    val die = this?.rolls?.singleOrNull()?.dice?.singleOrNull() ?: return false
     return die.size == 20 && die.result == 20
 }

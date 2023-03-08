@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.hertsig.dnd.combat.dto.Use
-import org.hertsig.dnd.dice.Dice
+import org.hertsig.dnd.dice.MultiDice
+import org.hertsig.dnd.dice.parse
 
 internal val mapper = ObjectMapper()
     .registerModule(KotlinModule.Builder().enable(KotlinFeature.StrictNullChecks).build())
@@ -17,13 +18,13 @@ internal val mapper = ObjectMapper()
     })
     .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
-private object DiceSerializer : JsonSerializer<Dice>() {
-    override fun serialize(value: Dice, generator: JsonGenerator, serializers: SerializerProvider) =
+private object DiceSerializer : JsonSerializer<MultiDice>() {
+    override fun serialize(value: MultiDice, generator: JsonGenerator, serializers: SerializerProvider) =
         generator.writeString(value.asString(false))
 }
 
-private object DiceDeserializer : JsonDeserializer<Dice>() {
-    override fun deserialize(parser: JsonParser, ctx: DeserializationContext?) = Dice.parse(parser.valueAsString)
+private object DiceDeserializer : JsonDeserializer<MultiDice>() {
+    override fun deserialize(parser: JsonParser, ctx: DeserializationContext?) = parse(parser.valueAsString)
 }
 
 private object UseSerializer : JsonSerializer<Use>() {

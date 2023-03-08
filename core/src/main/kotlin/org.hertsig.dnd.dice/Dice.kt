@@ -2,39 +2,31 @@ package org.hertsig.dnd.dice
 
 import kotlin.math.absoluteValue
 
-data class Dice(private val sizes: List<Int>, val modifier: Int = 0, val type: String = "") {
+data class Dice(val sizes: Collection<Int>, val modifier: Int = 0, val type: String = "") {
+    init { require(sizes.all { it > 0 }) }
     val average get() = sizes.sumOf { it + 1 } / 2.0 + modifier
     fun roll() = DieRolls(sizes.map { DieRoll.roll(it) }, modifier, type)
+    fun doubleDice() = Dice(sizes + sizes, modifier, type)
+    fun isRelevant() = modifier != 0 || sizes.isNotEmpty()
 
     operator fun plus(dice: Dice) = Dice(sizes + dice.sizes, modifier + dice.modifier, type.ifBlank { dice.type })
-    operator fun plus(modifier: Int) = copy(modifier = this.modifier + modifier)
-    operator fun minus(modifier: Int) = copy(modifier = this.modifier - modifier)
-    operator fun invoke(type: String) = copy(type = type)
-    fun doubleDice() = copy(sizes = sizes + sizes)
+    operator fun plus(modifier: Int) = Dice(sizes, this.modifier + modifier, type)
+    operator fun minus(modifier: Int) = Dice(sizes, this.modifier - modifier, type)
+    operator fun times(multiplier: Int) = Dice(sizes * multiplier, modifier * multiplier, type)
+    operator fun invoke(type: String) = Dice(sizes, modifier, type.ifBlank { this.type })
 
-    fun asString(withAverage: Boolean = true) = sizes.groupBy { it }.map { (size, sizes) -> "${sizes.size}d$size" }
-        .joinToString(" + ", postfix = "${modifier(modifier)}${average(withAverage)} $type").trim()
-
-    private fun average(withAverage: Boolean) = if (withAverage) " (${average.toInt()})" else ""
+    fun asString(withAverage: Boolean = false): String {
+        var value = sizes.groupBy { it }.map { (size, sizes) -> "${sizes.size}d$size" }.joinToString(" + ")
+        if (value.isBlank()) value = modifier.toString() else value += modifier(modifier)
+        val average = if (withAverage) "(${average.toInt()})" else ""
+        return listOf(value, average, type).filter { it.isNotBlank() }.joinToString(" ")
+    }
 
     override fun toString() = asString()
 
     companion object {
-        val none = Dice(listOf())
-
-        fun parseOptional(string: String): Dice? {
-            if (string.isBlank()) return null
-            return parse(string)
-        }
-
-        fun parse(string: String): Dice {
-            val (_, dice, modifier, type) = Regex("(.*?)([+-]\\s*\\d+)?(\\s+[A-Za-z\\s,&/()]*)?").matchEntire(string)!!.groupValues
-            val sizes = dice.split("+").flatMap {
-                val (amount, size) = it.trim().split("d")
-                List(amount.trim().toInt()) { size.trim().toInt() }
-            }
-            return Dice(sizes, modifier.replace(Regex("\\s+"), "").toIntOrNull() ?: 0, type.trim())
-        }
+        val NONE = Dice(listOf())
+        val D20 = (1 d 20)
     }
 }
 
@@ -45,3 +37,5 @@ private fun modifier(modifier: Int) = when {
     modifier < 0 -> " - ${modifier.absoluteValue}"
     else -> " + $modifier"
 }
+
+private operator fun <T> Collection<T>.times(multiplier: Int) = List(multiplier) { this }.flatten()

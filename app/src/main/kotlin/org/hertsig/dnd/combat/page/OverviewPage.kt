@@ -27,7 +27,7 @@ import org.hertsig.dnd.combat.element.Attack
 import org.hertsig.dnd.combat.element.Roller
 import org.hertsig.dnd.combat.element.Trait
 import org.hertsig.dnd.combat.element.TraitLine
-import org.hertsig.dnd.dice.d
+import org.hertsig.dnd.dice.MultiDice
 
 private val log = logger {}
 
@@ -69,14 +69,14 @@ fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolea
         FlowRow(crossAxisSpacing = 2.dp) {
 //            TraitLine("Abilities", visible = true)
             Stat.values().asList().displayForEach({ "${it.display.substring(0, 3)} ${statBlock.scores[it]}" }) { text, it ->
-                Roller(text, (1 d 20) + statBlock.modifierFor(it), statBlock.name, "${it.display} check")
+                Roller(text, MultiDice.D20 + statBlock.modifierFor(it), statBlock.name, "${it.display} check")
             }
         }
         if (statBlock.proficientSaves.isNotEmpty()) {
             FlowRow(crossAxisSpacing = 2.dp) {
                 TraitLine("Saving throws", visible = true)
                 statBlock.proficientSaves.displayForEach({ "${it.display.substring(0, 3)} ${modifier(statBlock.saveModifierFor(it))}" }) { text, it ->
-                    Roller(text, (1 d 20) + statBlock.saveModifierFor(Stat.STRENGTH), statBlock.name, "${it.display} saving throw")
+                    Roller(text, MultiDice.D20 + statBlock.saveModifierFor(Stat.STRENGTH), statBlock.name, "${it.display} saving throw")
                 }
             }
         }
@@ -84,7 +84,7 @@ fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolea
             FlowRow {
                 TraitLine("Skills", visible = true)
                 statBlock.allSkills.displayForEach({ it.display }) { text, it ->
-                    Roller(text, (1 d 20) + statBlock.modifierFor(it), statBlock.name, "${it.display} check")
+                    Roller(text, MultiDice.D20 + statBlock.modifierFor(it), statBlock.name, "${it.display} check")
                 }
             }
         }
