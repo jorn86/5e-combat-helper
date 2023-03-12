@@ -20,6 +20,7 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-core:2.14.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.1")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.5")
 
     implementation("org.slf4j:slf4j-simple:2.0.6")
 }

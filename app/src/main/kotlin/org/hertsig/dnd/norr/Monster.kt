@@ -38,16 +38,16 @@ interface Monster: Analyzable {
     fun cr(): String
     @Magic(elementType = Spellcasting::class)
     fun spellcasting(): List<Spellcasting>?
-    @Magic(elementType = Named::class)
+    @Magic(elementType = Entry::class)
     fun trait(): DynamicList
-    @Magic(elementType = Named::class)
+    @Magic(elementType = Entry::class)
     fun action(): DynamicList
-    @Magic(elementType = Named::class)
+    @Magic(elementType = Entry::class)
     fun bonus(): DynamicList
-    @Magic(elementType = Named::class)
+    @Magic(elementType = Entry::class)
     fun reaction(): DynamicList
     fun legendaryHeader(): List<String>?
-    @Magic(elementType = Named::class)
+    @Magic(elementType = Entry::class)
     fun legendary(): DynamicList
     fun legendaryGroup(): LegendaryGroup
     fun traitTags(): List<Any>
@@ -63,7 +63,7 @@ interface Monster: Analyzable {
     fun hasFluffImages(): Boolean?
 }
 
-interface Named {
+interface Entry {
     fun name(): String?
-    fun entries(): List<String>
+    fun entries(): List<String> // probably DynamicList (String, Entry) but we don't care for now
 }

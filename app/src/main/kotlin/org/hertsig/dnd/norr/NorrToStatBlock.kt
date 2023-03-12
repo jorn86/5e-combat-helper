@@ -60,11 +60,11 @@ data class Abilities(
 )
 
 private fun Monster.analyzeAbilities(): Abilities {
-    val (bonusTraits, traits) = trait().getAll<Named>().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
-    val (bonusActions, actions) = action().getAll<Named>().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
-    val bonus = bonus().getAll<Named>().map { it.parseAbility(this) }
-    val reaction = reaction().getAll<Named>().map {it.parseAbility(this) }
-    val legendary = legendary().getAll<Named>().map { it.parseLegendaryAbility(this) }
+    val (bonusTraits, traits) = trait().getAll<Entry>().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
+    val (bonusActions, actions) = action().getAll<Entry>().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
+    val bonus = bonus().getAll<Entry>().map { it.parseAbility(this) }
+    val reaction = reaction().getAll<Entry>().map {it.parseAbility(this) }
+    val legendary = legendary().getAll<Entry>().map { it.parseLegendaryAbility(this) }
     return Abilities(traits, actions, bonus + bonusTraits + bonusActions, reaction, legendary)
 }
 
@@ -146,17 +146,17 @@ private fun Monster.parseSpeed(): String {
 
 private fun Monster.parseLegendaryHeader(): Int {
     if (legendary().isEmpty()) return 0
-    val text = legendaryHeader()?.firstOrNull() ?: legendary().first().get<Named>().entries().first()
+    val text = legendaryHeader()?.firstOrNull() ?: legendary().first().get<Entry>().entries().first()
     return text.substringAfter("can take ").substringBefore(" legendary actions").toIntOrNull() ?: 3
 }
 
-private fun Named.parseLegendaryAbility(monster: Monster): Ability {
+private fun Entry.parseLegendaryAbility(monster: Monster): Ability {
     val name = name().orEmpty()
     val cost = Regex("Costs (\\d+) action", RegexOption.IGNORE_CASE).find(name) ?: return parseAbility(monster, name, 1)
     return parseAbility(monster, name.substringBefore(" ("), cost.groupValues[1].toInt())
 }
 
-private fun Named.parseAbility(monster: Monster, name: String = name().orEmpty(), legendaryCost: Int? = null): Ability {
+private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty(), legendaryCost: Int? = null): Ability {
     val (parsedName, recharge) = parseRecharge(name)
     val (finalName, use) = parseUse(parsedName)
     val text = entries().joinToString(" ")
