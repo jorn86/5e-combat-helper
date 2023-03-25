@@ -1,4 +1,4 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.spell
 
 import org.hertsig.dnd.combat.service.mapper
 import org.hertsig.magic.magicMap
@@ -7,8 +7,8 @@ import kotlin.io.path.bufferedReader
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 
-fun getSpell(name: String) = index[name.lowercase()]
-fun getSpell(name: String, book: String) = data[book]?.spell().orEmpty()
+fun getNorrSpell(name: String) = index[name.lowercase()]
+fun getNorrSpell(name: String, book: String) = data[book]?.spell().orEmpty()
     .firstOrNull { it.name().equals(name, ignoreCase = true) }
 
 private val data by lazy { load() }
@@ -24,8 +24,4 @@ private fun load(): Map<String, Spells> {
         val name = it.fileName.name
         name.substring(7, name.length - 5) to magicMap(data)
     }
-}
-
-fun main() {
-    index.values.first().analyze("Spell")
 }

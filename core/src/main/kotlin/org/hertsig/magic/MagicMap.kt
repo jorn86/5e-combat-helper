@@ -6,24 +6,23 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
-import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.jvm.javaMethod
 
-inline fun <reified T> magicMap(data: Map<String, Any>) = magicMap(data, T::class.java)
 inline fun <reified T> magicList(data: List<Map<String, Any>>) = magicList(data, T::class.java)
+inline fun <reified T> magicMap(data: Map<String, Any>) = magicMap(data, T::class.java)
 
 fun <T> magicList(data: List<Map<String, Any>>, type: Class<T>) = data.map { magicMap(it, type) }
 fun <T> magicMap(data: Map<String, Any>, type: Class<T>): T {
-    return Proxy.newProxyInstance(MagicHandler::class.java.classLoader, arrayOf(type), MagicHandler(data)) as T
+    return Proxy.newProxyInstance(MagicHandler::class.java.classLoader, arrayOf(type, Analyzable::class.java), MagicHandler(data)) as T
 }
 
 private class MagicHandler(val data: Map<String, Any>): InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?) = when {
         method.isDefault -> InvocationHandler.invokeDefault(proxy, method, *(args.orEmpty()))
-        else -> cache.get(method)(data, args.orEmpty())
+        else -> cache[method](data, args.orEmpty())
     }
 
     companion object {
@@ -44,10 +43,10 @@ private class MagicHandler(val data: Map<String, Any>): InvocationHandler {
             val elementMapper = elementType.getAnnotation(Magic::class.java)?.mapper?.instance() ?: DefaultMapper
             return when {
                 returnType.isDynamicList() -> DynamicListHandler(name, mapper)
-                returnType.isList() -> if (elementType.isInterface) ListHandler(name, mapper, elementType, elementMapper) else IdentityHandler(name, mapper)
-                returnType.isMap() -> if (elementType.isInterface) MapHandler(name, mapper, elementType, elementMapper) else IdentityHandler(name, mapper)
+                returnType.isList() -> if (elementType.isInterface) ListHandler(name, mapper, elementType, elementMapper) else IdentityHandler(name, mapper, returnType)
+                returnType.isMap()  -> if (elementType.isInterface)  MapHandler(name, mapper, elementType, elementMapper) else IdentityHandler(name, mapper, returnType)
                 returnType.isInterface -> SingleHandler(name, returnType, mapper)
-                else -> IdentityHandler(name, mapper) // TODO check return type
+                else -> IdentityHandler(name, mapper, returnType)
             }
         }
 
@@ -71,33 +70,40 @@ private abstract class NoArgsHandler<T>: Handler<T> {
 private class DynamicListHandler(val key: String, val mapper: Mapper): NoArgsHandler<DynamicList>() {
     override fun handle(data: Map<String, Any>): DynamicList {
         val value = mapper(data[key]) ?: emptyList<Any>()
-        return dynamicList(value as List<*>)
+        return dynamicList(safeCast(value))
     }
+    override fun toString() = "${javaClass.simpleName}($key)"
 }
 
 private class ListHandler<T>(val key: String, val mapper: Mapper, val elementType: Class<T>, val elementMapper: Mapper): NoArgsHandler<List<T>>() {
     override fun handle(data: Map<String, Any>): List<T> {
         val value = mapper(data[key]) ?: return emptyList()
-        return (value as List<Any>).map { magicMap(elementMapper(it) as Map<String, Any>, elementType) }
+        return safeCast<List<Any>>(value).map { magicMap(safeCast(elementMapper(it)), elementType) }
     }
+    override fun toString() = "${javaClass.simpleName}($key)"
 }
 
 private class MapHandler(val key: String, val mapper: Mapper, val elementType: Class<out Any>, val elementMapper: Mapper): NoArgsHandler<Map<String, Any>>() {
     override fun handle(data: Map<String, Any>): Map<String, Any> {
         val value = mapper(data[key]) ?: return emptyMap()
-        return (value as Map<String, Any>).mapValues { magicMap(elementMapper(it.value) as Map<String, Any>, elementType) }
+        return safeCast<Map<String, Any>>(value).mapValues {
+            magicMap(safeCast(elementMapper(it.value)), elementType)
+        }
     }
+    override fun toString() = "${javaClass.simpleName}($key)"
 }
 
 private class SingleHandler(val key: String, val type: Class<out Any>, val mapper: Mapper): NoArgsHandler<Any?>() {
     override fun handle(data: Map<String, Any>): Any? {
         val value = mapper(data[key]) ?: return null
-        return magicMap(value as Map<String, Any>, type)
+        return magicMap(safeCast(value), type)
     }
+    override fun toString() = "${javaClass.simpleName}($key)"
 }
 
-private class IdentityHandler(val key: String, val mapper: Mapper): NoArgsHandler<Any?>() {
-    override fun handle(data: Map<String, Any>) = mapper(data[key])
+private class IdentityHandler<T>(val key: String, val mapper: Mapper, val returnType: Class<T>): NoArgsHandler<Any?>() {
+    override fun handle(data: Map<String, Any>) = safeCast(mapper(data[key]), returnType)
+    override fun toString() = "${javaClass.simpleName}($key)"
 }
 
 private object ToStringHandler: NoArgsHandler<String>() {
@@ -111,10 +117,8 @@ private object HashCodeHandler: NoArgsHandler<Int>() {
 private object EqualsHandler: Handler<Boolean> {
     override fun invoke(data: Map<String, Any>, args: Array<out Any>): Boolean {
         checkArgs(args, 1)
-        val arg = args.singleOrNull() ?: return false
-        if (!Proxy.isProxyClass(arg.javaClass)) return false
-        val handler = Proxy.getInvocationHandler(arg) as? MagicHandler ?: return false
-        return data == handler.data
+        val otherData = dataFromProxy(args.single()) ?: return false
+        return data == otherData
     }
 }
 
@@ -126,27 +130,27 @@ private object AnalyzeHandler: Handler<Unit> {
     }
 }
 
-fun analyze(data: Map<String, Any>, name: String) {
-    println("interface $name {")
-    data.forEach { (key, value) ->
-        val type = value.javaClass
-        val typeName = when {
-            type.isList() -> "List<Any>"
-            type.isMap() -> "Map<String, Any>"
-            else -> type.kotlin.simpleName
-        }
-        println("\tfun $key(): $typeName")
-    }
-    println("}")
-}
-
-private fun Class<*>.isDynamicList() = DynamicList::class.java.isAssignableFrom(this)
-private fun Class<*>.isList() = List::class.java.isAssignableFrom(this)
-private fun Class<*>.isMap() = Map::class.java.isAssignableFrom(this)
 private fun <T: Any> KClass<T>.instance() = objectInstance ?: createInstance()
 
 private fun Handler<*>.checkArgs(args: Array<out Any>, size: Int) = require(args.size == size) {
-    "${javaClass.simpleName} requires $size arguments, but got ${args.contentToString()}"
+    "${javaClass.simpleName} requires $size argument(s), but got ${args.contentToString()}"
+}
+
+private fun dataFromProxy(proxy: Any?): Map<String, Any>? {
+    if (proxy == null) return null
+    if (!Proxy.isProxyClass(proxy.javaClass)) return null
+    val handler = Proxy.getInvocationHandler(proxy) as? MagicHandler ?: return null
+    return handler.data
 }
 
 private fun Method.match(ref: KFunction<*>) = this == ref.javaMethod
+
+private inline fun <reified T> Handler<*>.safeCast(value: Any?): T = safeCast(value, T::class.java)
+private fun <T> Handler<*>.safeCast(value: Any?, type: Class<T>): T {
+    return try {
+        if (type.isPrimitive) value as T else type.cast(value)
+    } catch (e: ClassCastException) {
+        value.analyze("UnexpectedType")
+        throw IllegalArgumentException("$this wants to return ${type.simpleName}, but is ${value?.javaClass?.simpleName}", e)
+    }
+}

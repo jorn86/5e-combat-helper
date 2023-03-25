@@ -1,6 +1,5 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.bestiary
 
-import org.hertsig.magic.Analyzable
 import org.hertsig.magic.Magic
 import org.hertsig.magic.Mapper
 
@@ -12,7 +11,7 @@ interface Speeds {
     @Magic(mapper = SpeedMapper::class) fun walk(): Speed?
 }
 
-interface Speed: Analyzable {
+interface Speed {
     fun number(): Int
     fun condition(): String?
     fun cond(): String? // ?

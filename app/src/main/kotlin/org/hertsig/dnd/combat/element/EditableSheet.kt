@@ -26,9 +26,9 @@ import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.element.AbilityType.*
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parseOptional
-import org.hertsig.dnd.norr.Monster
-import org.hertsig.dnd.norr.getFromBestiary
-import org.hertsig.dnd.norr.updateStatBlock
+import org.hertsig.dnd.norr.bestiary.Monster
+import org.hertsig.dnd.norr.bestiary.getFromBestiary
+import org.hertsig.dnd.norr.bestiary.updateStatBlock
 import java.util.*
 
 private val log = logger {}

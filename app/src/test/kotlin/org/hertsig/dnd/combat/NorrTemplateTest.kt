@@ -1,18 +1,12 @@
 package org.hertsig.dnd.combat
 
-import org.hertsig.dnd.norr.Template
-import org.hertsig.dnd.norr.templateRegex
-import org.hertsig.dnd.norr.templateValue
+import org.hertsig.dnd.norr.parseNorrTemplateText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class NorrTemplateTest {
     @Test
     fun parseDC() {
-        assertEquals("DC 12", "{@dc 12}".parseTemplates())
+         assertEquals("DC 12", "{@dc 12}".parseNorrTemplateText())
     }
-
-    private fun String.parseTemplates(replacement: (MatchResult) -> Template = ::templateValue) =
-        replace(templateRegex) { replacement(it).text }
 }
-

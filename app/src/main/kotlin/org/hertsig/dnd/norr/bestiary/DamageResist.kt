@@ -1,12 +1,11 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.bestiary
 
 import org.hertsig.dnd.combat.element.cap
-import org.hertsig.magic.Analyzable
 import org.hertsig.magic.DynamicList
 import org.hertsig.magic.Magic
 import org.hertsig.magic.getAll
 
-interface DamageResist: Analyzable {
+interface DamageResist {
     @Magic(elementType = DamageResist::class)
     fun resist(): DynamicList
     @Magic(elementType = DamageResist::class)

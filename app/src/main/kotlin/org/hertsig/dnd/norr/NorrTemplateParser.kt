@@ -9,8 +9,20 @@ import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parse
 import java.util.*
 
-@VisibleForTesting
-val templateRegex = Regex("\\{@(\\w+) (.+?)}")
+private val templateRegex = Regex("\\{@(\\w+) (.+?)}")
+
+fun String.parseNorrTemplateText(replacement: (MatchResult) -> String = { templateValue(it).text }) =
+    replace(templateRegex, replacement)
+
+fun String.parseNorrTemplate(): Pair<String, MutableList<Template>> {
+    val templates = mutableListOf<Template>()
+    val text = parseNorrTemplateText {
+        val template = templateValue(it)
+        templates.add(template)
+        template.text
+    }
+    return text to templates
+}
 
 sealed interface Template {
     val text: String
@@ -65,16 +77,16 @@ fun templateValue(match: MatchResult): Template {
     val text = match.groupValues[2].split("|").map { it.trim() }.filter { it.isNotBlank() }
     return when(match.groupValues[1]) {
         "atk" -> Template.Attack(text.single().split(",").map(Template.Attack.Type::forText).toEnumSet())
+        "condition" -> Template.Other(text.single())
         "damage" -> Template.Damage(parse(text.single()).singleUntyped())
         "dc" -> Template.DC(text.single().toInt())
         "dice" -> Template.Dice(parse(text.single()).singleUntyped())
         "h" -> Template.Other("")
         "hit" -> Template.ToHit(text.single().toInt())
-        "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
         "item" -> Template.Other(text.first())
-        "skill" -> Template.Other(text.single()) // make own implementation when needed
-        "condition" -> Template.Other(text.single())
+        "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
         "quickref" -> Template.Other(text.first())
+        "skill" -> Template.Other(text.single()) // make own implementation when needed
         else -> Template.Other(match.groupValues[0])
     }
 }
@@ -86,3 +98,5 @@ private fun MultiDice.singleUntyped(): Dice {
 }
 
 const val DAMAGE_MARKER = "<DMG>"
+internal val DAMAGE_TYPE_PAREN = Regex("\\($DAMAGE_MARKER\\) (\\w+)")
+internal val DAMAGE_TYPE = Regex("$DAMAGE_MARKER (\\w+)")

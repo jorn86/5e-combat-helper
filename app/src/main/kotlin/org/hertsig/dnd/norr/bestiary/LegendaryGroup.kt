@@ -1,4 +1,4 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.bestiary
 
 interface LegendaryGroup {
     fun name(): String

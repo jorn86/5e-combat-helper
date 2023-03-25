@@ -1,10 +1,11 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.bestiary
 
-import org.hertsig.magic.Analyzable
+import org.hertsig.dnd.norr.Entry
+import org.hertsig.dnd.norr.spell.Spellcasting
 import org.hertsig.magic.DynamicList
 import org.hertsig.magic.Magic
 
-interface Monster: Analyzable {
+interface Monster {
     fun name(): String
     fun isNpc(): Boolean?
     fun isNamedCreature(): Boolean?
@@ -39,16 +40,16 @@ interface Monster: Analyzable {
     @Magic(elementType = Spellcasting::class)
     fun spellcasting(): List<Spellcasting>?
     @Magic(elementType = Entry::class)
-    fun trait(): DynamicList
+    fun trait(): List<Entry>
     @Magic(elementType = Entry::class)
-    fun action(): DynamicList
+    fun action(): List<Entry>
     @Magic(elementType = Entry::class)
-    fun bonus(): DynamicList
+    fun bonus(): List<Entry>
     @Magic(elementType = Entry::class)
-    fun reaction(): DynamicList
+    fun reaction(): List<Entry>
+    @Magic(elementType = Entry::class)
+    fun legendary(): List<Entry>
     fun legendaryHeader(): List<String>?
-    @Magic(elementType = Entry::class)
-    fun legendary(): DynamicList
     fun legendaryGroup(): LegendaryGroup
     fun traitTags(): List<Any>
     fun senseTags(): List<Any>
@@ -61,9 +62,4 @@ interface Monster: Analyzable {
     fun hasToken(): Boolean?
     fun hasFluff(): Boolean?
     fun hasFluffImages(): Boolean?
-}
-
-interface Entry {
-    fun name(): String?
-    fun entries(): List<String> // probably DynamicList (String, Entry) but we don't care for now
 }

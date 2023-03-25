@@ -18,7 +18,7 @@ private val log = logger {}
 
 suspend fun StatBlock.image(): ImageBitmap? = imageFor(name)
 suspend fun imageFor(creatureName: String): ImageBitmap? = withContext(Dispatchers.IO) {
-    imageCache.get(creatureName).orElse(null)
+    imageCache[creatureName].orElse(null)
 }
 
 private val imageCache = Caffeine.newBuilder()

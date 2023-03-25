@@ -1,4 +1,4 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.bestiary
 
 import org.hertsig.dnd.combat.service.mapper
 import org.hertsig.magic.magicMap

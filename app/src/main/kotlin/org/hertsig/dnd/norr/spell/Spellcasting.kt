@@ -1,9 +1,8 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.spell
 
-import org.hertsig.magic.Analyzable
 import org.hertsig.magic.Magic
 
-interface Spellcasting: Analyzable {
+interface Spellcasting {
     fun name(): String
     fun headerEntries(): List<String>
     fun ability(): String
@@ -13,7 +12,7 @@ interface Spellcasting: Analyzable {
     fun spells(): Map<String, SpellList>
 }
 
-interface SpellList: Analyzable {
+interface SpellList {
     fun slots(): Int?
     fun spells(): List<String>
 }

@@ -1,11 +1,11 @@
-package org.hertsig.dnd.norr
+package org.hertsig.dnd.norr.bestiary
 
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.*
-import org.hertsig.dnd.combat.element.*
+import org.hertsig.dnd.combat.element.cap
 import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.MultiDice
-import org.hertsig.magic.getAll
+import org.hertsig.dnd.norr.*
 import java.util.*
 
 private val log = logger {}
@@ -30,7 +30,7 @@ fun updateStatBlock(monster: Monster, original: StatBlock = StatBlock()): StatBl
         intelligence = monster.int(),
         wisdom = monster.wis(),
         charisma = monster.cha(),
-        armorClass = monster.ac().joinToString(", ") { it.display() }.replace(templateRegex) { templateValue(it).text },
+        armorClass = monster.ac().joinToString(", ") { it.display() }.parseNorrTemplateText { templateValue(it).text },
         speed = monster.parseSpeed(),
         senses = monster.senses().orEmpty().joinToString(", ") { if (it.endsWith("ft")) "$it." else it }.cap(),
         languages = monster.languages().orEmpty().joinToString(", "),
@@ -60,11 +60,11 @@ data class Abilities(
 )
 
 private fun Monster.analyzeAbilities(): Abilities {
-    val (bonusTraits, traits) = trait().getAll<Entry>().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
-    val (bonusActions, actions) = action().getAll<Entry>().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
-    val bonus = bonus().getAll<Entry>().map { it.parseAbility(this) }
-    val reaction = reaction().getAll<Entry>().map {it.parseAbility(this) }
-    val legendary = legendary().getAll<Entry>().map { it.parseLegendaryAbility(this) }
+    val (bonusTraits, traits) = trait().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
+    val (bonusActions, actions) = action().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
+    val bonus = bonus().map { it.parseAbility(this) }
+    val reaction = reaction().map {it.parseAbility(this) }
+    val legendary = legendary().map { it.parseLegendaryAbility(this) }
     return Abilities(traits, actions, bonus + bonusTraits + bonusActions, reaction, legendary)
 }
 
@@ -146,7 +146,7 @@ private fun Monster.parseSpeed(): String {
 
 private fun Monster.parseLegendaryHeader(): Int {
     if (legendary().isEmpty()) return 0
-    val text = legendaryHeader()?.firstOrNull() ?: legendary().first().get<Entry>().entries().first()
+    val text = legendaryHeader()?.firstOrNull() ?: legendary().first().entries().first()
     return text.substringAfter("can take ").substringBefore(" legendary actions").toIntOrNull() ?: 3
 }
 
@@ -161,19 +161,14 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
     val (finalName, use) = parseUse(parsedName)
     val text = entries().joinToString(" ")
     log.debug("Parsing ability $finalName: $text")
-    val templates = mutableListOf<Template>()
-    val parsedText = text.replace(templateRegex) {
-        val replacement = templateValue(it)
-        templates.add(replacement)
-        replacement.text
-    }
+    val (parsedText, templates) = text.parseNorrTemplate()
     val attack = templates.singleTypeOrNull<Template.Attack>()
     return if (attack != null) {
         val toHit = templates.singleType<Template.ToHit>()
         val damages = templates.filterIsInstance<Template.Damage>().map { it.dice }
         val stat = analyzeAttackStat(monster, toHit, if (attack.isSpell()) EnumSet.of(Stat.INTELLIGENCE, Stat.WISDOM, Stat.CHARISMA) else EnumSet.of(Stat.STRENGTH, Stat.DEXTERITY))
         val damageModifier = stat?.let { monster.abilityModifier(it) } ?: 0
-        val damageTypes = DAMAGE_TYPE.findAll(parsedText).map { it.groupValues[1] }.toList()
+        val damageTypes = DAMAGE_TYPE_PAREN.findAll(parsedText).map { it.groupValues[1] }.toList()
         val typedDamages = damages.zip(damageTypes) { damage, type -> damage(type) }
         val damage = if (typedDamages.isEmpty()) MultiDice(Dice.NONE) else MultiDice(typedDamages) - damageModifier
         val reach = if (attack.isMelee()) parseReach(parsedText) else null
@@ -182,7 +177,7 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
         val extraText = parsedText.substringAfter("damage. ", "")
         Ability.Attack(finalName, stat, extraHitModifier, reach, range, longRange, damage, extraText, use, legendaryCost)
     } else {
-        val displayText = text.replace(templateRegex) {
+        val displayText = text.parseNorrTemplateText {
             val value = templateValue(it)
             if (value is Template.Damage) value.dice.asString(false) else value.text
         }
@@ -194,7 +189,7 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
 
 fun parseRecharge(text: String): Pair<String, Recharge> {
     var recharge = Recharge.NO
-    val parsedText = text.replace(templateRegex) {
+    val parsedText = text.parseNorrTemplateText {
         val value = templateValue(it)
         if (value is Template.Recharge) recharge = value.recharge
         value.text
@@ -251,7 +246,6 @@ private fun <T> List<T>.split(condition: (T) -> Boolean): Pair<List<T>, List<T>>
 private inline fun <reified T> List<*>.singleType() = single { it is T } as T
 private inline fun <reified T> List<*>.singleTypeOrNull() = singleOrNull { it is T } as T?
 
-private val DAMAGE_TYPE = Regex("\\($DAMAGE_MARKER\\) (\\w+)")
 private val REACH = Regex("reach (\\d+) ft.")
 private val RANGE = Regex("range (\\d+)/?(\\d+)? ft.")
 private val USE = Regex("(\\d+)/(\\w+)")
