@@ -41,7 +41,7 @@ fun OverviewPage(statBlocks: List<StatBlock>, modifier: Modifier, active: StatBl
                 RowTextLine("Expand")
                 BasicEditNumber(columns, 1, 6, suffix = "columns", width = 70.dp)
             }
-            ScrollableFlowColumn(4.dp, 4.dp, ReorderStrategy(), columns.value) {
+            ScrollableFlowColumn(4.dp, 4.dp, ReorderStrategy, columns.value) {
                 statBlocks.forEach {
                     SmallStatBlock(it, it == active, expand)
                 }

@@ -69,7 +69,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
             }
         }
 
-        ScrollableFlowColumn(16.dp, 16.dp, ReorderStrategy()) {
+        ScrollableFlowColumn(16.dp, 16.dp, ReorderStrategy) {
             Column {
                 TraitLine("Armor class", statBlock.armorClass, singleLine = false)
                 TraitLine("Hit points", statBlock.maxHitPoints.toString())
@@ -180,7 +180,7 @@ fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true,
         }, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
 //        TextLine(" $type, ", style = style)
         Roller("${modifier(modifier)} to hit, ", attackRoll, statBlock.name, name)
-        TextLine("$rangeText. ")
+        TextLine("$rangeText ")
 //        TextLine("${attack.target}. ")
         val hitText = "Hit: ${damage.asString()} damage"
         if (attack.extra.isNotBlank() && expand) {

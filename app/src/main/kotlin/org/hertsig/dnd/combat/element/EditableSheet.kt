@@ -1,13 +1,11 @@
 package org.hertsig.dnd.combat.element
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
 import androidx.compose.material.Icon
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -18,11 +16,14 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.flowlayout.FlowRow
 import org.hertsig.compose.autoFocus
 import org.hertsig.compose.component.*
+import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.Page
+import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
+import org.hertsig.dnd.combat.element.AbilityType.*
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parseOptional
 import org.hertsig.dnd.norr.Monster
@@ -35,9 +36,10 @@ private val log = logger {}
 @Composable
 fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifier) {
     val original = page.active
-    var updated by remember(page) { page.updated }
+    val updatedState = remember(page) { page.updated }
+    var updated by updatedState
 
-    Column(modifier.padding(8.dp), Arrangement.spacedBy(4.dp)) {
+    SpacedColumn(modifier.padding(8.dp)) {
         val name = remember { mutableStateOf(original.name) }
         val size = remember { mutableStateOf(original.size) }
         val type = remember { mutableStateOf(original.type) }
@@ -57,11 +59,13 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
         val proficientSaves = remember { original.proficientSaves.toMutableStateList() }
         val proficientSkills = remember { original.proficientSkills.toMutableStateList() }
         val expertiseSkills = remember { original.expertiseSkills.toMutableStateList() }
-        val traits = remember { original.traits.toMutableStateList() }
-        val actions = remember { original.actions.toMutableStateList() }
-        val bonusActions = remember { original.bonusActions.toMutableStateList() }
-        val reactions = remember { original.reactions.toMutableStateList() }
-        val legendaryActions = remember { original.legendaryActions.toMutableStateList() }
+        val abilityState = AbilityState(
+            remember { original.traits.toMutableStateList() },
+            remember { original.actions.toMutableStateList() },
+            remember { original.bonusActions.toMutableStateList() },
+            remember { original.reactions.toMutableStateList() },
+            remember { original.legendaryActions.toMutableStateList() },
+        )
         val legendaryActionUses = remember { mutableStateOf(original.legendaryActionUses) }
 
         var bestiaryEntry by remember { mutableStateOf<Monster?>(null) }
@@ -71,8 +75,8 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
             if (state.statBlocks.update(original, updated)) state.page = Page.Show(updated)
         }
 
-        ScrollableFlowColumn(16.dp, 16.dp) {
-            Column(Modifier.padding(bottom = 16.dp), Arrangement.spacedBy(4.dp)) {
+        ScrollableFlowColumn(16.dp, 16.dp, ReorderStrategy) {
+            SpacedColumn {
                 FormRow("Name") {
                     BasicEditText(name, Modifier.weight(1f).autoFocus()) {
                         updated = updated.copy(name = it)
@@ -96,9 +100,24 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                     BasicEditNumber(proficiencyBonus, 2, 9) { updated = updated.copy(proficiencyBonus = it) }
                 }
                 FormRow("Abilities") {
-                    FlowRow(mainAxisSpacing = 2.dp, crossAxisSpacing = 2.dp) {
-                        Stat.values().forEach { stat ->
-                            EditAbilityScore(stat.display, stats.getValue(stat)) { updated = updated.copy(stat, it) }
+                    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+                        SpacedColumn(spacing = 2.dp) {
+                            @Composable
+                            fun EditAbilityScore(stat: Stat) {
+                                BasicEditNumber(stats.getValue(stat), 0, 40, 1, 100.dp, stat.display.lowercase(), false) {
+                                    updated = updated.copy(stat, it)
+                                }
+                            }
+                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                                EditAbilityScore(Stat.STRENGTH)
+                                EditAbilityScore(Stat.DEXTERITY)
+                                EditAbilityScore(Stat.CONSTITUTION)
+                            }
+                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                                EditAbilityScore(Stat.INTELLIGENCE)
+                                EditAbilityScore(Stat.WISDOM)
+                                EditAbilityScore(Stat.CHARISMA)
+                            }
                         }
                     }
                 }
@@ -137,7 +156,7 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                         })
                     }
                 }
-                if (legendaryActions.isNotEmpty()) {
+                if (abilityState.legendaryActions.isNotEmpty()) {
                     FormRow("Legendary actions") {
                         BasicEditNumber(legendaryActionUses, max = 5) {
                             updated = updated.copy(legendaryActionUses = it)
@@ -150,11 +169,11 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                 ProficiencyBlock("Expertise skills", expertiseSkills) { updated = updated.copy(expertiseSkills = it) }
             }
 
-            AbilityBlock("Traits", traits, false) { updated = updated.copy(traits = it) }
-            AbilityBlock("Actions", actions) { updated = updated.copy(actions = it) }
-            AbilityBlock("Bonus actions", bonusActions) { updated = updated.copy(bonusActions = it) }
-            AbilityBlock("Reactions", reactions) { updated = updated.copy(reactions = it) }
-            AbilityBlock("Legendary actions", legendaryActions, legendary = true) { updated = updated.copy(legendaryActions = it) }
+            AbilityBlock(TRAITS, abilityState, updatedState)
+            AbilityBlock(ACTIONS, abilityState, updatedState)
+            AbilityBlock(BONUS_ACTIONS, abilityState, updatedState)
+            AbilityBlock(REACTIONS, abilityState, updatedState)
+            AbilityBlock(LEGENDARY_ACTIONS, abilityState, updatedState)
         }
     }
 }
@@ -197,67 +216,50 @@ private fun <E: Enum<E>> ProficiencyBlock(
 
 @Composable
 private fun FormRow(label: String, content: @Composable RowScope.() -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+    SpacedRow(vertical = Alignment.CenterVertically) {
         RowTextLine(label, Modifier.width(160.dp))
         content()
     }
 }
 
 @Composable
-private fun EditAbilityScore(ability: String, state: MutableState<Int>, save: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.SpaceBetween) {
-        RowTextLine(ability, Modifier.width(90.dp)) // FIXME width is hack until we can properly table-layout this
-        BasicEditNumber(state, max = 40) { save(it) }
-    }
-}
-
-@Composable
 private fun AbilityBlock(
-    label: String,
-    abilities: SnapshotStateList<Ability>,
-    showAttacks: Boolean = true,
-    legendary: Boolean = false,
-    save: (List<Ability>) -> Unit,
+    type: AbilityType,
+    state: AbilityState,
+    updatedState: MutableState<StatBlock>,
 ) {
-    Column(Modifier.padding(bottom = 16.dp)) {
-        TextLine(label, style = MaterialTheme.typography.h6)
+    val abilities = state[type]
+
+    Column {
+        TextLine(type.display, style = MaterialTheme.typography.h6)
         HorizontalDivider()
-        Column(Modifier.padding(vertical = 4.dp), Arrangement.spacedBy(4.dp)) {
-            val defaultCost = if (legendary) 1 else null
-                abilities.forEachIndexed { index, it ->
-                val saveSingle: (Ability?) -> Unit = remember(abilities, index, it) {
-                    {
-                        if (it == null) {
-                            abilities.removeAt(index)
-                        } else {
-                            abilities[index] = it
-                        }
-                        save(abilities.toList())
-                    }
-                }
-                EditSingleAbility(it, saveSingle)
+        SpacedColumn(Modifier.padding(vertical = 4.dp)) {
+            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+                abilities.forEachIndexed { index, _ -> EditSingleAbility(type, index, state, updatedState) }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+
+            SpacedRow {
+                val defaultCost = if (type == LEGENDARY_ACTIONS) 1 else null
                 // Don't call save() yet when adding empty new abilities
-                if (showAttacks) {
-                    Button({ abilities.add(Ability.Attack(legendaryCost = defaultCost)) }) { RowTextLine("Attack") }
+                if (type != TRAITS) {
+                    SmallButton({ abilities.add(Ability.Attack(legendaryCost = defaultCost)) }) { RowTextLine("Attack") }
                 }
-                Button({ abilities.add(Ability.Trait(legendaryCost = defaultCost)) }) { RowTextLine("Trait") }
+                SmallButton({ abilities.add(Ability.Trait(legendaryCost = defaultCost)) }) { RowTextLine("Trait") }
             }
         }
     }
 }
 
 @Composable
-private fun EditSingleAbility(ability: Ability, save: (Ability?) -> Unit) {
-    when (ability) {
-        is Ability.Attack -> EditAttack(ability, save)
-        is Ability.Trait -> EditCustom(ability, save)
+private fun EditSingleAbility(type: AbilityType, index: Int, state: AbilityState, updatedState: MutableState<StatBlock>) {
+    when (val ability = state[type][index]) {
+        is Ability.Attack -> EditAttack(type, index, state, ability, updatedState)
+        is Ability.Trait -> EditCustom(type, index, state, ability, updatedState)
     }
 }
 
 @Composable
-private fun EditAttack(ability: Ability.Attack, save: (Ability?) -> Unit) {
+private fun EditAttack(type: AbilityType, index: Int, state: AbilityState, ability: Ability.Attack, updatedState: MutableState<StatBlock>) {
     val stat = remember(ability) { mutableStateOf(ability.stat) }
     val modifier = remember(ability) { mutableStateOf(ability.modifier) }
     val reach = remember(ability) { mutableStateOf(ability.reach ?: 0) }
@@ -265,71 +267,148 @@ private fun EditAttack(ability: Ability.Attack, save: (Ability?) -> Unit) {
     val longRange = remember(ability) { mutableStateOf(ability.longRange ?: 0) }
     val damage = remember(ability) { mutableStateOf(ability.damage) }
     val extra = remember(ability) { mutableStateOf(ability.extra) }
+    val abilities = state[type]
+    var updated by updatedState
+    val update = remember(type, index, abilities) {
+        { it: Ability ->
+            abilities[index] = it
+            updated = updated.copy(type, abilities)
+        }
+    }
 
-    EditAbility(ability, save) {
-        val attackStats = listOf(null, Stat.STRENGTH, Stat.DEXTERITY, Stat.INTELLIGENCE, Stat.WISDOM, Stat.CHARISMA)
-        BasicDropdown(stat, attackStats, Modifier.width(90.dp), onUpdate = {
-            save(ability.copy(stat = it))
-        }) { it?.display ?: "Custom" }
-        BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { save(ability.copy(modifier = it)) }
-        // TODO nicer UI for combined melee / ranged
-        TextLine("Reach")
-        BasicEditNumber(reach, 0, 25, 5, 36.dp, "ft.") { save(ability.copy(reach = it.takeIf { it > 0 })) }
-        TextLine("Range")
-        BasicEditNumber(range, 0, 300, 5, 36.dp, "ft.") { save(ability.copy(range = it.takeIf { it > 0 })) }
-        TextLine("/")
-        BasicEditNumber(longRange, 0, 600, 5, 36.dp, "ft.") { save(ability.copy(longRange = it.takeIf { it > 0 })) }
-        EditRoll(damage.value) {
-            if (it != null) {
-                damage.value = it
-                save(ability.copy(damage = it))
+    EditAbility(type, index, state, ability, updatedState) {
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+            SpacedRow {
+                val attackStats = listOf(null, Stat.STRENGTH, Stat.DEXTERITY, Stat.INTELLIGENCE, Stat.WISDOM, Stat.CHARISMA)
+                BasicDropdown(stat, attackStats, Modifier.width(90.dp), onUpdate = { update(ability.copy(stat = it)) }) { it?.display ?: "Custom" }
+                RowTextLine(modifier(updated.modifierFor(stat.value, true), " +"))
+                BasicEditNumber(modifier, -5, 10, width = 50.dp, suffix = "to hit") { update(ability.copy(modifier = it)) }
+            }
+
+            SpacedRow {
+                RowTextLine("Reach")
+                BasicEditNumber(reach, 0, 25, 5, 36.dp, "ft.") { update(ability.copy(reach = it.takeIf { it > 0 })) }
+            }
+
+            SpacedRow {
+                RowTextLine("Range")
+                BasicEditNumber(range, 0, 300, 5, 36.dp, "ft.") { update(ability.copy(range = it.takeIf { it > 0 })) }
+                RowTextLine("/")
+                BasicEditNumber(longRange, 0, 600, 5, 36.dp, "ft.") { update(ability.copy(longRange = it.takeIf { it > 0 })) }
             }
         }
-        BasicEditText(extra) { save(ability.copy(extra = it)) }
+
+        SpacedRow {
+            RowTextLine("Damage")
+            EditRoll(damage.value, Modifier.weight(1f)) {
+                if (it != null) {
+                    damage.value = it
+                    update(ability.copy(damage = it))
+                }
+            }
+        }
+
+        SpacedRow {
+            // This doesn't get any vertical space if it's not inside a row (??)
+            BasicEditText(extra, Modifier.weight(1f), "Description", 5) {
+                update(ability.copy(extra = it))
+            }
+        }
     }
 }
 
 @Composable
-private fun EditCustom(ability: Ability.Trait, save: (Ability?) -> Unit) {
+private fun EditCustom(type: AbilityType, index: Int, state: AbilityState, ability: Ability.Trait, updatedState: MutableState<StatBlock>) {
     val recharge = remember(ability) { mutableStateOf(ability.recharge) }
     val description = remember(ability) { mutableStateOf(ability.description) }
+    val abilities = state[type]
+    var updated by updatedState
+    val update = remember(type, index, abilities, updatedState) {
+        { it: Ability ->
+            abilities[index] = it
+            updated = updated.copy(type, abilities)
+        }
+    }
 
-    EditAbility(ability, save) {
-        BasicDropdown(recharge, Modifier.width(30.dp), onUpdate = { save(ability.copy(recharge = it)) }) { it.display }
-        EditRoll(ability.roll) { save(ability.copy(roll = it)) }
-        BasicEditText(description, Modifier.fillMaxWidth(), "Description") { save(ability.copy(description = it)) }
+    EditAbility(type, index, state, ability, updatedState) {
+        SpacedRow {
+            RowTextLine("Recharge")
+            BasicDropdown(recharge, Modifier.width(30.dp), onUpdate = { update(ability.copy(recharge = it)) }) { it.display }
+            RowTextLine("Roll")
+            EditRoll(ability.roll, Modifier.weight(1f)) { update(ability.copy(roll = it)) }
+        }
+
+        SpacedRow {
+            // This doesn't get any vertical space if it's not inside a row (??)
+            BasicEditText(description, Modifier.weight(1f), "Description", 5) {
+                update(ability.copy(description = it))
+            }
+        }
     }
 }
 
 @Composable
 private fun EditAbility(
+    type: AbilityType,
+    index: Int,
+    state: AbilityState,
     ability: Ability,
-    save: (Ability?) -> Unit,
-    flow: Boolean = true,
-    content: @Composable () -> Unit
+    updatedState: MutableState<StatBlock>,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val name = remember(ability) { mutableStateOf(ability.name) }
     val use = remember(ability) { mutableStateOf(ability.use) }
+    val abilities = state[type]
+    var updated by updatedState
+    val save: (AbilityType, List<Ability>) -> Unit = remember {
+        { type, abilities -> updated = updated.copy(type, abilities) }
+    }
+    val update = remember(type, index, abilities, updatedState) {
+        { it: Ability ->
+            abilities[index] = it
+            updated = updated.copy(type, abilities)
+        }
+    }
 
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        @Composable fun innerContent() {
-            val modifier = if (name.value.isBlank()) Modifier.autoFocus() else Modifier
-            BasicEditText(name, modifier.width(100.dp), "Name") { save(ability.baseCopy(name = it)) }
-            if (ability.legendaryCost != null) {
-                val legendary = remember(ability) { mutableStateOf(ability.legendaryCost!!) }
-                BasicEditNumber(legendary, 1, 5) { save(ability.baseCopy(legendaryCost = it)) }
-            } else {
-                EditUse(use) { save(ability.baseCopy(use = it)) }
+    SpacedRow(Modifier.padding(vertical = 8.dp), vertical = Alignment.CenterVertically) {
+        Column {
+            IconButton({ abilities.swap(index, index - 1); save(type, abilities) },
+                Icons.Default.KeyboardArrowUp, enabled = index > 0, iconSize = 16.dp)
+            IconButton({ abilities.swap(index, index + 1); save(type, abilities) },
+                Icons.Default.KeyboardArrowDown, enabled = index < abilities.size - 1, iconSize = 16.dp)
+        }
+        SpacedColumn(Modifier.weight(1f), 2.dp) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                val modifier = if (name.value.isBlank()) Modifier.autoFocus() else Modifier
+                BasicEditText(name, modifier.weight(1f), "Name") { update(ability.baseCopy(name = it)) }
+                if (type == LEGENDARY_ACTIONS) {
+                    val legendary = remember(ability) { mutableStateOf(ability.legendaryCost!!) }
+                    BasicEditNumber(legendary, 1, 5, 1, 70.dp, "action(s)") {
+                        update(ability.baseCopy(legendaryCost = it))
+                    }
+                } else {
+                    EditUse(use) { update(ability.baseCopy(use = it)) }
+                }
             }
             content()
         }
+        Column {
+            val showMove = remember { mutableStateOf(false) }
+            IconButton({ showMove.value = true }, Icons.Default.ArrowRightAlt, iconSize = 16.dp)
+            val targets = remember { EnumSet.allOf(AbilityType::class.java).apply { remove(type) } }
+            DropdownMenu(showMove, targets, { it.display }) {
+                var toMove = abilities.removeAt(index)
+                if (type == LEGENDARY_ACTIONS) toMove = toMove.baseCopy(legendaryCost = null)
+                else if (it == LEGENDARY_ACTIONS) toMove = toMove.baseCopy(legendaryCost = 1)
 
-        if (flow) {
-            FlowRow(Modifier.weight(1f), mainAxisSpacing = 4.dp, crossAxisSpacing = 2.dp) { innerContent() }
-        } else {
-            Row(Modifier.weight(1f), Arrangement.spacedBy(4.dp)) { innerContent() }
+                val targetList = state[it]
+                targetList.add(toMove)
+                save(type, abilities)
+                save(it, targetList)
+                showMove.value = false
+            }
+            IconButton({ abilities.removeAt(index); save(type, abilities) }, Icons.Default.Close, iconSize = 16.dp)
         }
-        IconButton({ save(null) }, Icons.Default.Close, iconSize = 16.dp)
     }
 }
 
@@ -363,7 +442,44 @@ private fun EditUse(use: MutableState<Use>, onUpdate: (Use) -> Unit) {
         onUpdate = { onUpdate(create(amount.value, it)) })
 }
 
-inline fun <reified E : Enum<E>> Collection<E>.toEnumSet() =
+inline fun <reified E : Enum<E>> Collection<E>.toEnumSet(): EnumSet<E> =
     if (isEmpty()) EnumSet.noneOf(E::class.java) else EnumSet.copyOf(this)
 
 fun String?.cap() = orEmpty().replaceFirstChar { it.uppercase() }
+
+private data class AbilityState(
+    val traits: MutableList<Ability>,
+    val actions: MutableList<Ability>,
+    val bonusActions: MutableList<Ability>,
+    val reactions: MutableList<Ability>,
+    val legendaryActions: MutableList<Ability>,
+) {
+    operator fun get(type: AbilityType) = when(type) {
+        TRAITS -> traits
+        ACTIONS -> actions
+        BONUS_ACTIONS -> bonusActions
+        REACTIONS -> reactions
+        LEGENDARY_ACTIONS -> legendaryActions
+    }
+}
+
+private enum class AbilityType {
+    TRAITS, ACTIONS, BONUS_ACTIONS, REACTIONS, LEGENDARY_ACTIONS
+}
+
+private fun StatBlock.copy(type: AbilityType, value: List<Ability>): StatBlock {
+    val copy = value.toList()
+    return when (type) {
+        TRAITS -> copy(traits = copy)
+        ACTIONS -> copy(actions = copy)
+        BONUS_ACTIONS -> copy(bonusActions = copy)
+        REACTIONS -> copy(reactions = copy)
+        LEGENDARY_ACTIONS -> copy(legendaryActions = copy)
+    }
+}
+
+private fun <T> MutableList<T>.swap(firstIndex: Int, secondIndex: Int) {
+    val element = this[firstIndex]
+    this[firstIndex] = this[secondIndex]
+    this[secondIndex] = element
+}

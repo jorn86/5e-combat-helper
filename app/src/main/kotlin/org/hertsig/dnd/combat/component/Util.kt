@@ -2,7 +2,7 @@ package org.hertsig.dnd.combat.component
 
 import androidx.compose.runtime.Composable
 
-fun modifier(modifier: Int) = if (modifier < 0) modifier.toString() else "+$modifier"
+fun modifier(modifier: Int, suffix: String = "") = if (modifier < 0) "$modifier$suffix" else "+$modifier$suffix"
 
 @Composable
 fun <T> Collection<T>.displayForEach(

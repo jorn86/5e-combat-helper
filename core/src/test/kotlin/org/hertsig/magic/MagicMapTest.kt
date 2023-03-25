@@ -1,6 +1,7 @@
 package org.hertsig.magic
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 
 private val simpleData = mapOf("a" to 42, "b" to "42", "c" to listOf(42), "d" to listOf("42"), "e" to mapOf("42" to "42"))
@@ -34,6 +35,19 @@ class MagicMapTest {
     @Test
     fun testToString() {
         assertEquals(simpleData.toString(), magicMap<SimpleTest>(simpleData).toString())
+    }
+
+    @Test
+    fun testHashCode() {
+        assertEquals(simpleData.hashCode(), magicMap<SimpleTest>(simpleData).hashCode())
+    }
+
+    @Test
+    fun testEquals() {
+        val magic = magicMap<SimpleTest>(simpleData)
+        assertEquals(magicMap<SimpleTest>(simpleData), magic)
+        assertEquals(magicMap<DefaultTest>(simpleData), magic) // can only check the map content, not the actual type
+        assertNotEquals(magic, simpleData)
     }
 }
 
