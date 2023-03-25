@@ -20,7 +20,6 @@ import org.hertsig.compose.autoFocus
 import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
-import org.hertsig.core.error
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.Page
 import org.hertsig.dnd.combat.dto.*
@@ -36,8 +35,7 @@ private val log = logger {}
 @Composable
 fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifier) {
     val original = page.active
-    page.updated = remember { mutableStateOf(original) }
-    var updated by page.updated
+    var updated by remember(page) { page.updated }
 
     Column(modifier.padding(8.dp), Arrangement.spacedBy(4.dp)) {
         val name = remember { mutableStateOf(original.name) }
@@ -79,12 +77,7 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                     BasicEditText(name, Modifier.weight(1f).autoFocus()) {
                         updated = updated.copy(name = it)
                     }
-                    Button(
-                        ::loadFromBestiary,
-                        Modifier.heightIn(1.dp),
-                        bestiaryEntry != null,
-                        contentPadding = PaddingValues(8.dp, 4.dp)
-                    ) { TextLine("Load") }
+                    SmallButton(::loadFromBestiary, enabled = bestiaryEntry != null) { TextLine("Load") }
                 }
                 FormRow("Size") {
                     BasicDropdown(size, Modifier.weight(1f), onUpdate = { updated = updated.copy(size = it) })
@@ -260,7 +253,6 @@ private fun EditSingleAbility(ability: Ability, save: (Ability?) -> Unit) {
     when (ability) {
         is Ability.Attack -> EditAttack(ability, save)
         is Ability.Trait -> EditCustom(ability, save)
-        else -> log.error{"No renderer for $ability"}
     }
 }
 

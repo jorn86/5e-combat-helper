@@ -23,7 +23,6 @@ import org.hertsig.compose.component.TooltipText
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
-import org.hertsig.core.error
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.component.displayForEach
 import org.hertsig.dnd.combat.component.modifier
@@ -157,7 +156,6 @@ private fun Ability(statBlock: StatBlock, ability: Ability) {
     when (ability) {
         is Ability.Attack -> Attack(statBlock, ability)
         is Ability.Trait -> Trait(statBlock, ability)
-        else -> log.error { "No renderer for $ability" }
     }
 }
 
@@ -184,7 +182,7 @@ fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true,
         Roller("${modifier(modifier)} to hit, ", attackRoll, statBlock.name, name)
         TextLine("$rangeText. ")
 //        TextLine("${attack.target}. ")
-        val hitText = "Hit: ${damage.asString(true)} damage"
+        val hitText = "Hit: ${damage.asString()} damage"
         if (attack.extra.isNotBlank() && expand) {
             Roller("$hitText, ", damage, statBlock.name, "$name damage", LocalTextStyle.current, false)
             Text(attack.extra)

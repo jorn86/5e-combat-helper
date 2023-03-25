@@ -13,7 +13,7 @@ private val log = logger {}
 @Composable
 fun rememberStatBlocks(scope: CoroutineScope = rememberCoroutineScope()): StatBlockState {
     val state = remember { mutableStateListOf<StatBlock>() }
-    val order = remember { mutableStateOf(ListOrder.CHALLENGE_RATING) }
+    val order = remember { mutableStateOf(ListOrder.ALPHABETICAL) }
     LaunchedEffect(order.value) { state.sortWith(order.value.comparator) }
     return remember { StatBlockState(scope, state, order) }
 }
@@ -73,7 +73,7 @@ class StatBlockState(
     internal fun save() = scope.launch { json.save(statBlocks.sortedWith(alphabetical)) }
 }
 
-private val alphabetical = compareBy(String.CASE_INSENSITIVE_ORDER, StatBlock::name)
+private val alphabetical = compareBy(String.CASE_INSENSITIVE_ORDER, StatBlock::name).thenBy(StatBlock::hashCode)
 enum class ListOrder(val comparator: Comparator<StatBlock>) {
     ALPHABETICAL(alphabetical),
     CHALLENGE_RATING(compareBy(StatBlock::challengeRating).then(alphabetical)),

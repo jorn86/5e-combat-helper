@@ -13,8 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import org.hertsig.compose.component.RowTextLine
 import org.hertsig.compose.component.TextLine
@@ -52,12 +54,19 @@ fun RowScope.RollResult(
             }
         }
     }) {
-        val color = when {
-            roll.allDice.all { it.result == 1 } -> Color.Red
-            roll.allDice.all { it.result == it.size } -> Color.Green
-            else -> MaterialTheme.colors.onPrimary
+        val text = AnnotatedString.Builder()
+        roll.rolls.forEachIndexed { index, it ->
+            if (index > 0) text.append(" + ")
+            val add: AnnotatedString.Builder.() -> Unit = { append(it.total.toString()) }
+            when {
+                it.dice.all { it.result == 1 } -> text.withStyle(style.toSpanStyle().copy(color = Color.Red), add)
+                it.dice.all { it.result == it.size } -> text.withStyle(style.toSpanStyle().copy(color = Color.Green), add)
+                else -> text.add()
+            }
         }
-        RowTextLine("${roll.total} $suffix", modifier, color, style, TextAlign.Center)
+        text.append(" ")
+        text.append(suffix)
+        RowTextLine(text.toAnnotatedString(), modifier, MaterialTheme.colors.onPrimary, style, TextAlign.Center)
     }
 }
 

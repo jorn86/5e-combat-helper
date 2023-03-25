@@ -5,11 +5,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.hertsig.dnd.combat.dto.AppState
 import org.hertsig.dnd.combat.dto.StatBlock
+import org.hertsig.dnd.combat.dto.statBlock
 import org.hertsig.dnd.combat.element.EditableSheet
 import org.hertsig.dnd.combat.element.ReadonlySheet
 import org.hertsig.dnd.combat.page.*
@@ -38,7 +39,7 @@ sealed interface Page {
         }
     }
 
-     class Show(override val active: StatBlock): Page {
+    class Show(override val active: StatBlock): Page {
         override val subtitle get() = active.name
 
         @Composable
@@ -61,14 +62,14 @@ sealed interface Page {
     }
 
     class Edit(override val active: StatBlock): Page {
-        lateinit var updated: MutableState<StatBlock>
+        val updated = mutableStateOf(active)
 
         override val subtitle get() = "Edit ${active.name}"
 
         @Composable
         override fun drawToolbarButtons(state: AppState) {
             BarButton(Icons.Default.Save) {
-                if (::updated.isInitialized && state.statBlocks.update(active, updated.value)) {
+                if (state.statBlocks.update(active, updated.value)) {
                     state.page = Show(updated.value)
                 }
             }
@@ -126,6 +127,9 @@ sealed interface Page {
     object Combat: Page {
         @Composable
         override fun drawToolbarButtons(state: AppState) {
+            val statBlock = state.combat.current?.statBlock
+            BarButton(Icons.Default.Visibility, statBlock != null) { statBlock?.let { state.page = Show(it) } }
+            BarButton(Icons.Default.Edit, statBlock != null) { statBlock?.let { state.page = Edit(it) } }
             BarButton(Icons.Default.RestartAlt) { state.combat.startCombat() }
             BarButton(Icons.Default.KeyboardArrowUp) { state.combat.previousInitiative() }
             BarButton(Icons.Default.KeyboardArrowDown) { state.combat.nextInitiative() }
@@ -134,7 +138,7 @@ sealed interface Page {
 
         @Composable
         override fun drawList(state: AppState) {
-            InitiativeList(state.combat, Modifier.width(250.dp), showControls = true)
+//            InitiativeList(state.combat, Modifier.width(250.dp), showControls = true)
         }
 
         @Composable

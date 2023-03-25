@@ -39,18 +39,14 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     val initiativeRoll = MultiDice.D20 + it.modifierFor(Stat.DEXTERITY)
                     RowTextLine(it.name, Modifier.width(200.dp))
-                    Button({
+                    SmallButton({
                         val roll = initiativeRoll.roll()
                         finish(it.name, roll, CombatEntry.GroupEntry(it, roll.total, label))
-                    }, Modifier.heightIn(1.dp), contentPadding = PaddingValues(8.dp, 4.dp)) {
-                        TextLine("Group")
-                    }
-                    Button({
+                    }) { TextLine("Group") }
+                    SmallButton({
                         val roll = initiativeRoll.roll()
                         finish(it.name, roll, CombatEntry.Creature(it, roll.total, label))
-                    }, Modifier.heightIn(1.dp),contentPadding = PaddingValues(8.dp, 4.dp)) {
-                        TextLine("Single")
-                    }
+                    }) { TextLine("Single") }
                 }
             }
         }

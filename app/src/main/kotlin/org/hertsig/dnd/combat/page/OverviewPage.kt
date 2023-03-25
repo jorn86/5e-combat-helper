@@ -18,7 +18,6 @@ import org.hertsig.compose.component.TextLine
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
-import org.hertsig.core.error
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.component.displayForEach
 import org.hertsig.dnd.combat.component.modifier
@@ -129,6 +128,5 @@ private fun DisplayAbility(ability: Ability, statBlock: StatBlock, expand: Boole
     when (ability) {
         is Ability.Attack -> Attack(statBlock, ability, expand, addToName)
         is Ability.Trait -> Trait(statBlock, ability, expand, addToName)
-        else -> log.error { "No renderer for $ability" }
     }
 }

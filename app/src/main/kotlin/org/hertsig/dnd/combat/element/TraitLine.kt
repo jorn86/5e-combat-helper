@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import org.hertsig.compose.component.TextLine
 import org.hertsig.compose.component.TooltipText
 
@@ -23,10 +24,10 @@ fun TraitLine(
     if (visible) {
         if (expand) {
             val builder = AnnotatedString.Builder()
-            builder.pushStyle(style.toSpanStyle().copy(fontWeight = FontWeight.Bold))
-            builder.append(name)
-            builder.append(": ")
-            builder.pop()
+            builder.withStyle(style.toSpanStyle().copy(fontWeight = FontWeight.Bold)) {
+                append(name)
+                append(": ")
+            }
             builder.append(text)
             if (singleLine) {
                 TextLine(builder.toAnnotatedString(), modifier)

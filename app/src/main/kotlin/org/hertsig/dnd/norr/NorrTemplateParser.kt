@@ -63,7 +63,6 @@ sealed interface Template {
 @VisibleForTesting
 fun templateValue(match: MatchResult): Template {
     val text = match.groupValues[2].split("|").map { it.trim() }.filter { it.isNotBlank() }
-    val fullText = text.joinToString(";")
     return when(match.groupValues[1]) {
         "atk" -> Template.Attack(text.single().split(",").map(Template.Attack.Type::forText).toEnumSet())
         "damage" -> Template.Damage(parse(text.single()).singleUntyped())
@@ -72,10 +71,11 @@ fun templateValue(match: MatchResult): Template {
         "h" -> Template.Other("")
         "hit" -> Template.ToHit(text.single().toInt())
         "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
+        "item" -> Template.Other(text.first())
         "skill" -> Template.Other(text.single()) // make own implementation when needed
         "condition" -> Template.Other(text.single())
         "quickref" -> Template.Other(text.first())
-        else -> Template.Other(fullText)
+        else -> Template.Other(match.groupValues[0])
     }
 }
 
