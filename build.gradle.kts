@@ -35,6 +35,6 @@ subprojects {
 
     tasks.named<Test>("test") {
         useJUnitPlatform()
-        systemProperties["bestiaryFolder"] = System.getProperty("bestiaryFolder")
+        systemProperties["norrFolder"] = System.getProperty("norrFolder")
     }
 }

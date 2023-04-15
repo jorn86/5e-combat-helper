@@ -87,6 +87,7 @@ fun templateValue(match: MatchResult): Template {
         "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
         "quickref" -> Template.Other(text.first())
         "skill" -> Template.Other(text.single()) // make own implementation when needed
+        "spell" -> Template.Other(text.single()) // make own implementation when needed
         else -> Template.Other(match.groupValues[0])
     }
 }

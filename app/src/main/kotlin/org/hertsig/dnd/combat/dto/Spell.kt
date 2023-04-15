@@ -6,11 +6,13 @@ import org.hertsig.dnd.dice.MultiDice
 
 data class Spell(
     val name: String,
+    val source: String,
     val level: Int,
     val text: List<SpellText>,
     val time: String,
     val duration: String,
     val components: String,
+    val school: String,
     val range: String,
     val attack: String,
     val savingThrow: String,

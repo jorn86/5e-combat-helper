@@ -32,11 +32,13 @@ private class SpellParser(private val spell: NorrSpell) {
         parseText()
         return Spell(
             spell.name(),
+            spell.source(),
             spell.level(),
             text.toList(),
             parseTime(spell.time()),
             parseDuration(spell.duration()),
             spell.components().display(),
+            spell.school(),
             spell.range().display(),
             spell.spellAttack().orEmpty().joinToString(";"),
             spell.savingThrow().orEmpty().joinToString(";"),

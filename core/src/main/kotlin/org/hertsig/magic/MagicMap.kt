@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package org.hertsig.magic
 
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -15,6 +13,8 @@ inline fun <reified T> magicList(data: List<Map<String, Any>>) = magicList(data,
 inline fun <reified T> magicMap(data: Map<String, Any>) = magicMap(data, T::class.java)
 
 fun <T> magicList(data: List<Map<String, Any>>, type: Class<T>) = data.map { magicMap(it, type) }
+
+@Suppress("UNCHECKED_CAST")
 fun <T> magicMap(data: Map<String, Any>, type: Class<T>): T {
     return Proxy.newProxyInstance(MagicHandler::class.java.classLoader, arrayOf(type, Analyzable::class.java), MagicHandler(data)) as T
 }
@@ -146,11 +146,4 @@ private fun dataFromProxy(proxy: Any?): Map<String, Any>? {
 private fun Method.match(ref: KFunction<*>) = this == ref.javaMethod
 
 private inline fun <reified T> Handler<*>.safeCast(value: Any?): T = safeCast(value, T::class.java)
-private fun <T> Handler<*>.safeCast(value: Any?, type: Class<T>): T {
-    return try {
-        if (type.isPrimitive) value as T else type.cast(value)
-    } catch (e: ClassCastException) {
-        value.analyze("UnexpectedType")
-        throw IllegalArgumentException("$this wants to return ${type.simpleName}, but is ${value?.javaClass?.simpleName}", e)
-    }
-}
+private fun <T> Handler<*>.safeCast(value: Any?, type: Class<T>) = safeCast(value, type, toString())
