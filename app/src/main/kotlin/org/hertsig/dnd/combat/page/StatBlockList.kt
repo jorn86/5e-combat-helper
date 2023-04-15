@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import org.hertsig.compose.component.BasicDropdown
 import org.hertsig.compose.component.RowTextLine
 import org.hertsig.compose.component.ScrollableColumn
+import org.hertsig.compose.component.SmallButton
 import org.hertsig.dnd.combat.Page
 import org.hertsig.dnd.combat.dto.AppState
 import org.hertsig.dnd.combat.dto.ChallengeRating
@@ -32,7 +33,7 @@ fun StatBlockList(
             Button(
                 { state.page = Page.Edit(state.statBlocks.new()) },
                 Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondaryVariant)
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondaryVariant),
             ) {
                 RowTextLine("Add...", style = MaterialTheme.typography.subtitle1)
             }
@@ -42,7 +43,12 @@ fun StatBlockList(
                 val colors = MaterialTheme.colors
                 val isCurrent by remember { derivedStateOf { it == active } } // TODO remember probably not needed
                 val backgroundColor by remember { derivedStateOf { if (isCurrent) colors.primary else colors.secondary } }
-                Button({ onClick(it) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(backgroundColor)) {
+                SmallButton(
+                    { onClick(it) },
+                    Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(backgroundColor),
+                    padding = PaddingValues(vertical = 6.dp),
+                ) {
                     RowTextLine(it.name, style = MaterialTheme.typography.subtitle1)
                     if (it.challengeRating != ChallengeRating.NONE) RowTextLine("  (${it.challengeRating.display})")
                 }
