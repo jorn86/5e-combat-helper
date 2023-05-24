@@ -1,7 +1,15 @@
 package org.hertsig.dnd.norr.spell
 
+import org.hertsig.compose.display
+import org.hertsig.dnd.combat.dto.Spell
+import org.hertsig.dnd.combat.dto.SpellText
+import org.hertsig.dnd.combat.dto.Stat
+import org.hertsig.dnd.norr.book.ClassSpellList
 import org.hertsig.dnd.norr.listNorrFiles
+import org.hertsig.dnd.norr.parseNorrTemplateText
 import org.hertsig.dnd.norr.readJsonAsMap
+import org.hertsig.magic.DynamicMap
+import org.hertsig.magic.getAll
 import org.hertsig.magic.magicMap
 import kotlin.io.path.name
 
@@ -18,4 +26,55 @@ private fun load(): Map<String, Spells> {
         val name = it.fileName.name
         name.substring(7, name.length - 5) to magicMap(data)
     }
+}
+
+
+fun main() {
+    val classSpells = mutableMapOf<String, MutableSet<String>>()
+    // Only works for PHB
+    listNorrFiles("book", "book-phb.json").map { readJsonAsMap(it) }.map { book ->
+        DynamicMap(book)
+            .wrapList("data")
+            .filter { it.string("type") == "section" && it.string("name") == "Spells" }
+            .flatMap { it.dynamicList("entries").getAll<ClassSpellList> { list -> list.type() == "entries" } }
+            .forEach { classList ->
+                val theClass = classList.name().removeSuffix(" Spells")
+                classList.entries().flatMap { it.items() }.forEach {
+                    classSpells.getOrPut(it.parseNorrTemplateText()) { mutableSetOf() }.add(theClass)
+                }
+            }
+    }
+
+    println("Name,Book,Die,Type,To hit,Range,Area,Classes,Extra")
+    data.values.asSequence()
+        .flatMap { it.spell() }
+        .filter { it.level() == 0 }
+        .filter { "(UA)" !in it.name() }
+        .distinctBy { it.name() }
+        .map { parseSpell(it) }
+        .filter { it.damage != null }
+        .sortedBy { it.name }
+        .forEach {
+            val name = it.name
+            val book = it.source
+//            val classes = it.
+            val die = it.damage!!.main.sizes.single()
+            val type = it.damage.main.type
+            val range = it.range.removeSuffix(" radius").removeSuffix(" ft.")
+            val area = it.text.filterIsInstance<SpellText.Text>().any { text ->
+                text.text.contains("Each creature") || text.text.contains("All other creatures")
+            }
+            val toHit = parseToHit(it)
+            val classes = classSpells[name].orEmpty().joinToString("/")
+            // scaling: always true
+            println("$name,$book,$die,$type,$toHit,$range,$area,$classes")
+//            println(classes)
+        }
+}
+
+private fun parseToHit(spell: Spell) = when {
+    spell.attack == "M" -> "melee attack"
+    spell.attack == "R" -> "ranged attack"
+    spell.savingThrow.isNotBlank() -> Stat.valueOf(spell.savingThrow.uppercase()).display.substring(0, 3) + " save"
+    else -> "-"
 }

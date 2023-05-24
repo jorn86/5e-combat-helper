@@ -17,7 +17,7 @@ sealed interface Ability {
     val use: Use
     val legendaryCost: Int?
 
-    fun costDisplay() = if (legendaryCost ?: 0 > 1) " (costs $legendaryCost actions)" else ""
+    fun costDisplay() = if ((legendaryCost ?: 0) > 1) " (costs $legendaryCost actions)" else ""
     fun baseCopy(name: String = this.name, use: Use = this.use, legendaryCost: Int? = this.legendaryCost): Ability
 
     data class Trait(
