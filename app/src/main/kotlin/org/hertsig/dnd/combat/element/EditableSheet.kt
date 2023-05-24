@@ -382,7 +382,7 @@ private fun EditAbility(
                 val modifier = if (name.value.isBlank()) Modifier.autoFocus() else Modifier
                 BasicEditText(name, modifier.weight(1f), "Name") { update(ability.baseCopy(name = it)) }
                 if (type == LEGENDARY_ACTIONS) {
-                    val legendary = remember(ability) { mutableStateOf(ability.legendaryCost!!) }
+                    val legendary = remember(ability) { mutableStateOf(ability.legendaryCost ?: 1) }
                     BasicEditNumber(legendary, 1, 5, 1, 70.dp, "action(s)") {
                         update(ability.baseCopy(legendaryCost = it))
                     }

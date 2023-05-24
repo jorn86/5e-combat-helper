@@ -10,6 +10,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.hertsig.compose.component.BasicDropdown
 import org.hertsig.compose.component.RowTextLine
@@ -41,15 +42,15 @@ fun StatBlockList(
         ScrollableColumn(Modifier.width(250.dp), Arrangement.spacedBy(4.dp), padding) {
             items(state.statBlocks.statBlocks, { Key(it == active, it) }) {
                 val colors = MaterialTheme.colors
-                val isCurrent by remember { derivedStateOf { it == active } } // TODO remember probably not needed
+                val isCurrent by remember { derivedStateOf { it == active } }
                 val backgroundColor by remember { derivedStateOf { if (isCurrent) colors.primary else colors.secondary } }
                 SmallButton(
                     { onClick(it) },
                     Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(backgroundColor),
-                    padding = PaddingValues(vertical = 6.dp),
+                    padding = PaddingValues(6.dp),
                 ) {
-                    RowTextLine(it.name, style = MaterialTheme.typography.subtitle1)
+                    RowTextLine(it.name, Modifier.weight(1f), align = TextAlign.Center, style = MaterialTheme.typography.subtitle1)
                     if (it.challengeRating != ChallengeRating.NONE) RowTextLine("  (${it.challengeRating.display})")
                 }
             }

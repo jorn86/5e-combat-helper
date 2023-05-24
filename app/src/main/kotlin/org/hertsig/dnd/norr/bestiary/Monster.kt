@@ -4,13 +4,19 @@ import org.hertsig.dnd.norr.Entry
 import org.hertsig.dnd.norr.spell.Spellcasting
 import org.hertsig.magic.DynamicList
 import org.hertsig.magic.Magic
+import org.hertsig.magic.Mapper
 
 interface Monster {
     fun name(): String
-    fun isNpc(): Boolean?
-    fun isNamedCreature(): Boolean?
+    @Magic(name = "_copy")
+    fun delegate(): Delegate?
+    @Magic(mapper = NullToFalse::class)
+    fun isNpc(): Boolean
+    @Magic(mapper = NullToFalse::class)
+    fun isNamedCreature(): Boolean
     fun source(): String
     fun page(): Int
+    @Magic(mapper = NullToEmptyList::class)
     fun size(): List<String>
     @Magic(mapper = TypeMapper::class)
     fun type(): Type
@@ -27,16 +33,19 @@ interface Monster {
     fun cha(): Int
     fun save(): SavingThrows?
     fun skill(): Skills?
-    fun senses(): List<String>?
+    @Magic(mapper = NullToEmptyList::class)
+    fun senses(): List<String>
     fun passive(): Int
-    @Magic(elementType = ConditionImmune::class)
-    fun conditionImmune(): List<ConditionImmune>?
+    @Magic(mapper = NullToEmptyList::class, elementType = ConditionImmune::class)
+    fun conditionImmune(): List<ConditionImmune>
     @Magic(elementType = DamageResist::class)
     fun immune(): DynamicList
     @Magic(elementType = DamageResist::class)
     fun resist(): DynamicList
-    fun languages(): List<String>?
-    fun cr(): String
+    @Magic(mapper = NullToEmptyList::class)
+    fun languages(): List<String>
+    @Magic(mapper = ChallengeRatingMapper::class)
+    fun cr(): CR
     @Magic(elementType = Spellcasting::class)
     fun spellcasting(): List<Spellcasting>?
     @Magic(elementType = Entry::class)
@@ -49,17 +58,46 @@ interface Monster {
     fun reaction(): List<Entry>
     @Magic(elementType = Entry::class)
     fun legendary(): List<Entry>
-    fun legendaryHeader(): List<String>?
+    @Magic(mapper = NullToEmptyList::class)
+    fun legendaryHeader(): List<String>
     fun legendaryGroup(): LegendaryGroup
+    @Magic(mapper = NullToEmptyList::class)
     fun traitTags(): List<Any>
+    @Magic(mapper = NullToEmptyList::class)
     fun senseTags(): List<Any>
+    @Magic(mapper = NullToEmptyList::class)
     fun actionTags(): List<Any>
+    @Magic(mapper = NullToEmptyList::class)
     fun languageTags(): List<Any>
+    @Magic(mapper = NullToEmptyList::class)
     fun damageTags(): List<Any>
-    fun spellcastingTags(): List<Any>?
+    @Magic(mapper = NullToEmptyList::class)
+    fun spellcastingTags(): List<Any>
+    @Magic(mapper = NullToEmptyList::class)
     fun miscTags(): List<Any>
+    @Magic(mapper = NullToEmptyList::class)
     fun conditionInflict(): List<Any>
-    fun hasToken(): Boolean?
-    fun hasFluff(): Boolean?
-    fun hasFluffImages(): Boolean?
+    @Magic(mapper = NullToFalse::class)
+    fun hasToken(): Boolean
+    @Magic(mapper = NullToFalse::class)
+    fun hasFluff(): Boolean
+    @Magic(mapper = NullToFalse::class)
+    fun hasFluffImages(): Boolean
+}
+
+object NullToFalse : Mapper {
+    override fun invoke(value: Any?) = value ?: false
+}
+
+object NullToEmptyList : Mapper {
+    override fun invoke(value: Any?) = value ?: emptyList<Nothing>()
+}
+
+object IsNotNull : Mapper {
+    override fun invoke(value: Any?) = value != null
+}
+
+interface Delegate {
+    fun name(): String
+    fun source(): String
 }

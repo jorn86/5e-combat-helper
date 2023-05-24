@@ -1,5 +1,6 @@
 package org.hertsig.dnd.norr.bestiary
 
+import org.hertsig.core.debug
 import org.hertsig.core.logger
 import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.element.cap
@@ -11,7 +12,17 @@ import java.util.*
 private val log = logger {}
 
 fun updateStatBlock(monster: Monster, original: StatBlock = StatBlock()): StatBlock {
-    val cr = ChallengeRating(monster.cr())
+    monster.delegate()?.let {
+        val delegate = getFromBestiary(it.name(), it.source().lowercase())
+        if (delegate == null) {
+            log.warn("No bestiary result for delegate $it of $monster")
+        } else {
+            log.debug { "Delegating to ${delegate.name()}: $monster" }
+            return updateStatBlock(delegate, original).copy(name = monster.name())
+        }
+    }
+
+    val cr = ChallengeRating(monster.cr().cr())
     val (proficient, expertise) = monster.analyzeSkills(cr.proficiencyBonus)
     val (trait, action, bonus, reaction, legendary) = monster.analyzeAbilities()
     val spellcasting = monster.analyzeSpellcasting()
@@ -30,16 +41,16 @@ fun updateStatBlock(monster: Monster, original: StatBlock = StatBlock()): StatBl
         intelligence = monster.int(),
         wisdom = monster.wis(),
         charisma = monster.cha(),
-        armorClass = monster.ac().joinToString(", ") { it.display() }.parseNorrTemplateText { templateValue(it).text },
+        armorClass = monster.ac().joinToString(", ") { it.display() }.parseNorrTemplateText(),
         speed = monster.parseSpeed(),
-        senses = monster.senses().orEmpty().joinToString(", ") { if (it.endsWith("ft")) "$it." else it }.cap(),
-        languages = monster.languages().orEmpty().joinToString(", "),
+        senses = monster.senses().joinToString(", ") { if (it.endsWith("ft")) "$it." else it }.cap(),
+        languages = monster.languages().joinToString(", "),
         proficientSaves = monster.save().parse(),
         proficientSkills = proficient,
         expertiseSkills = expertise,
         damageResistances = displayDamageResist(monster.resist()),
         damageImmunities = displayDamageResist(monster.immune()),
-        conditionImmunities = monster.conditionImmune().orEmpty().joinToString(", ") { it.display() }.cap(),
+        conditionImmunities = monster.conditionImmune().joinToString(", ") { it.display() }.cap(),
         traits = traits,
         actions = action,
         bonusActions = bonus,
@@ -146,7 +157,7 @@ private fun Monster.parseSpeed(): String {
 
 private fun Monster.parseLegendaryHeader(): Int {
     if (legendary().isEmpty()) return 0
-    val text = legendaryHeader()?.firstOrNull() ?: legendary().first().entries().first()
+    val text = legendaryHeader().firstOrNull() ?: legendary().first().entries().first()
     return text.substringAfter("can take ").substringBefore(" legendary actions").toIntOrNull() ?: 3
 }
 
@@ -164,7 +175,7 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
     val (parsedText, templates) = text.parseNorrTemplate()
     val attack = templates.singleTypeOrNull<Template.Attack>()
     return if (attack != null) {
-        val toHit = templates.singleType<Template.ToHit>()
+        val toHit = templates.firstType<Template.ToHit>()
         val damages = templates.filterIsInstance<Template.Damage>().map { it.dice }
         val stat = analyzeAttackStat(monster, toHit, if (attack.isSpell()) EnumSet.of(Stat.INTELLIGENCE, Stat.WISDOM, Stat.CHARISMA) else EnumSet.of(Stat.STRENGTH, Stat.DEXTERITY))
         val damageModifier = stat?.let { monster.abilityModifier(it) } ?: 0
@@ -212,7 +223,7 @@ private fun parseRange(text: String): Pair<Int, Int?> {
 }
 
 private fun analyzeAttackStat(monster: Monster, toHit: Template.ToHit, stats: EnumSet<Stat>): Stat? {
-    val proficiencyBonus = ChallengeRating.invoke(monster.cr()).proficiencyBonus
+    val proficiencyBonus = ChallengeRating.invoke(monster.cr().cr()).proficiencyBonus
     return stats.firstOrNull { proficiencyBonus + monster.abilityModifier(it) == toHit.modifier }
 }
 
@@ -243,8 +254,10 @@ private fun <T> List<T>.split(condition: (T) -> Boolean): Pair<List<T>, List<T>>
     return Pair(match, noMatch)
 }
 
-private inline fun <reified T> List<*>.singleType() = single { it is T } as T
+private inline fun <reified T> List<*>.singleType(): T = singleTypeOrNull()
+    ?: error("Expected one ${T::class.simpleName}, but got $this")
 private inline fun <reified T> List<*>.singleTypeOrNull() = singleOrNull { it is T } as T?
+private inline fun <reified T> List<*>.firstType() = first { it is T } as T
 
 private val REACH = Regex("reach (\\d+) ft.")
 private val RANGE = Regex("range (\\d+)/?(\\d+)? ft.")
