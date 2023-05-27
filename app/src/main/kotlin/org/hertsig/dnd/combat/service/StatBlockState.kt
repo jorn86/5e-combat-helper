@@ -26,6 +26,7 @@ class StatBlockState(
     private val json = JsonService("statblocks", object : TypeReference<List<StatBlock>>() {})
 
     val statBlocks: List<StatBlock> get() = state
+    fun visibleStatBlocks(or: Boolean = false) = statBlocks.filter { or || it.visible }
     private var order by orderState
 
     fun new(): StatBlock {

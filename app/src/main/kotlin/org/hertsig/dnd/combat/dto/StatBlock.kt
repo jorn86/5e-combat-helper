@@ -34,6 +34,7 @@ data class StatBlock(
     val legendaryActions: List<Ability> = emptyList(),
     val legendaryActionUses: Int = 0,
     val spellcasting: List<SpellcastingTrait> = emptyList(),
+    val visible: Boolean = true,
 ) {
     fun copy(stat: Stat, value: Int) = when (stat) {
         Stat.STRENGTH -> copy(strength = value)

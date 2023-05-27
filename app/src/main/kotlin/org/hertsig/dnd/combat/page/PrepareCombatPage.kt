@@ -35,7 +35,7 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
             item {
                 BasicDropdown(state.statBlocks.orderState, Modifier.width(200.dp))
             }
-            items(state.statBlocks.statBlocks) {
+            items(state.statBlocks.visibleStatBlocks()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     val initiativeRoll = MultiDice.D20 + it.modifierFor(Stat.DEXTERITY)
                     RowTextLine(it.name, Modifier.width(200.dp))
