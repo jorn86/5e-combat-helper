@@ -69,26 +69,30 @@ sealed interface Template {
         override val text get() = "DC $value"
     }
 
-    data class Other(override val text: String): Template
+    data class Spell(val name: String): Template {
+        override val text get() = name
+    }
+
+    data class Other(val type: String, override val text: String): Template
 }
 
 @VisibleForTesting
 fun templateValue(match: MatchResult): Template {
     val text = match.groupValues[2].split("|").map { it.trim() }.filter { it.isNotBlank() }
-    return when(match.groupValues[1]) {
+    return when(val type = match.groupValues[1]) {
         "atk" -> Template.Attack(text.single().split(",").map(Template.Attack.Type::forText).toEnumSet())
-        "condition" -> Template.Other(text.single())
+        "condition" -> Template.Other(type, text.single())
         "damage" -> Template.Damage(parse(text.single()).singleUntyped())
         "dc" -> Template.DC(text.single().toInt())
         "dice" -> Template.Dice(parse(text.single()).singleUntyped())
-        "h" -> Template.Other("")
+        "h" -> Template.Other(type, "")
         "hit" -> Template.ToHit(text.single().toInt())
-        "item" -> Template.Other(text.first())
+        "item" -> Template.Other(type, text.first())
         "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
-        "quickref" -> Template.Other(text.first())
-        "skill" -> Template.Other(text.single()) // make own implementation when needed
-        "spell" -> Template.Other(text.single()) // make own implementation when needed
-        else -> Template.Other(match.groupValues[0])
+        "quickref" -> Template.Other(type, text.first())
+        "spell" -> Template.Spell(text.single()) // make own implementation when needed
+        "skill" -> Template.Other(type, text.single()) // make own implementation when needed
+        else -> Template.Other(type, match.groupValues[0])
     }
 }
 

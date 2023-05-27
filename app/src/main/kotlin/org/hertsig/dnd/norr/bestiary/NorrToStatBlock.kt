@@ -7,6 +7,7 @@ import org.hertsig.dnd.combat.element.cap
 import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.norr.*
+import org.hertsig.dnd.norr.spell.Spellcasting
 import java.util.*
 
 private val log = logger {}
@@ -26,8 +27,6 @@ fun updateStatBlock(monster: Monster, original: StatBlock = StatBlock()): StatBl
     val (proficient, expertise) = monster.analyzeSkills(cr.proficiencyBonus)
     val (trait, action, bonus, reaction, legendary) = monster.analyzeAbilities()
     val spellcasting = monster.analyzeSpellcasting()
-    val traits = trait.toMutableList()
-    if (spellcasting != null) traits.add(Ability.Trait(spellcasting.name))
     return original.copy(
         name = monster.name(),
         size = Size(monster.size().first()),
@@ -51,14 +50,13 @@ fun updateStatBlock(monster: Monster, original: StatBlock = StatBlock()): StatBl
         damageResistances = displayDamageResist(monster.resist()),
         damageImmunities = displayDamageResist(monster.immune()),
         conditionImmunities = monster.conditionImmune().joinToString(", ") { it.display() }.cap(),
-        traits = traits,
+        traits = trait,
         actions = action,
         bonusActions = bonus,
         reactions = reaction,
         legendaryActions = legendary,
         legendaryActionUses = monster.parseLegendaryHeader(),
-        casterAbility = spellcasting?.stat,
-        spellSlots = spellcasting?.level ?: CasterLevel.NONE,
+        spellcasting = spellcasting,
     )
 }
 
@@ -79,23 +77,67 @@ private fun Monster.analyzeAbilities(): Abilities {
     return Abilities(traits, actions, bonus + bonusTraits + bonusActions, reaction, legendary)
 }
 
-data class MonsterSpellcasting(val name: String, val stat: Stat?, val level: CasterLevel)
+private fun Monster.analyzeSpellcasting() = spellcasting().flatMap {
+    listOfNotNull(it.analyzeInnateSpellcasting(), it.analyzeListSpellcasting())
+}
 
-private fun Monster.analyzeSpellcasting(): MonsterSpellcasting? {
-    val spellcasting = spellcasting()?.firstOrNull { it.name() == "Spellcasting" }
-        ?: spellcasting()?.firstOrNull { it.name() == "Innate Spellcasting" }
-        ?: return null
-    val ability = when (spellcasting.ability()) {
-        "int" -> Stat.INTELLIGENCE
-        "wis" -> Stat.WISDOM
-        "cha" -> Stat.CHARISMA
-        else -> null
-    }
-    val headerText = spellcasting.headerEntries().joinToString(";")
+private fun Spellcasting.analyzeAbility() = when (val ability = ability()) {
+    "int" -> Stat.INTELLIGENCE
+    "wis" -> Stat.WISDOM
+    "cha" -> Stat.CHARISMA
+    else -> error("Unexpected spellcasting ability: $ability")
+}
+
+private fun Spellcasting.analyzeInnateSpellcasting(): InnateSpellcasting? {
+    val will = will().orEmpty()
+    val daily = daily()
+    if (will.isEmpty() && daily == null) return null
+    val spells = mapOf(
+        0 to will,
+        1 to daily?.onePerDayEach().orEmpty(),
+        2 to daily?.twoPerDayEach().orEmpty(),
+        3 to daily?.threePerDayEach().orEmpty(),
+    ).mapValues { (_, it) -> it.map(String::parseSpellNameTemplate) }
+        .filterValues { it.isNotEmpty() }
+    return InnateSpellcasting(name(), analyzeAbility(), spells)
+}
+
+private fun Spellcasting.analyzeListSpellcasting(): SpellListCasting? {
+    val spells = spells() ?: return null
+//    val trait = spellcasting.spells().mapKeys { (level, _) -> level.toInt() }
+    val headerText = headerEntries().joinToString(";")
     val warlock = headerText.contains("warlock", ignoreCase = true)
     val result = Regex("(\\d+)\\w+-level spellcaster").find(headerText)
     val level = result?.groupValues?.getOrNull(1)?.toIntOrNull()?.let { CasterLevel(it, warlock) } ?: CasterLevel.NONE
-    return MonsterSpellcasting(spellcasting.name(), ability, level)
+    val list = Regex("following (\\w+) spells").find(headerText)?.groupValues?.getOrNull(1)
+        ?: Regex("the (\\w+) spell list").find(headerText)?.groupValues?.getOrNull(1)
+        ?: "?"
+    val parsedSpells = mapOf(
+        0 to spells.cantrips(),
+        1 to spells.firstLevel(),
+        2 to spells.secondLevel(),
+        3 to spells.thirdLevel(),
+        4 to spells.fourthLevel(),
+        5 to spells.fifthLevel(),
+        6 to spells.sixthLevel(),
+        7 to spells.seventhLevel(),
+        8 to spells.eighthLevel(),
+        9 to spells.ninthLevel(),
+    ).filterValuesNotNull()
+        // consider checking it.slots() with parsed caster level
+        .mapValues { (_, it) -> it.spells().map { it.parseSpellNameTemplate() } }
+    return SpellListCasting(name(), list, analyzeAbility(), level, parsedSpells)
+}
+
+private fun String.parseSpellNameTemplate(): StatblockSpell {
+    var template: Template.Spell? = null
+    val text = parseNorrTemplateText {
+        val spellTemplate = templateValue(it)
+        if (spellTemplate is Template.Spell) template = spellTemplate
+        ""
+    }
+    val name = template?.name ?: error("Invalid spell name template: $this")
+    return StatblockSpell(name, text.trim()) // TODO parse "(self only)"
 }
 
 private fun SavingThrows?.parse(): EnumSet<Stat> {
@@ -184,7 +226,7 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
         val damage = if (typedDamages.isEmpty()) MultiDice(Dice.NONE) else MultiDice(typedDamages) - damageModifier
         val reach = if (attack.isMelee()) parseReach(parsedText) else null
         val (range, longRange) = if (attack.isRanged()) parseRange(parsedText) else Pair(null, null)
-        val extraHitModifier = if (stat == null) toHit.modifier else 0
+        val extraHitModifier = if (stat == null) toHit.modifier - monster.proficiencyBonus else 0
         val extraText = parsedText.substringAfter("damage. ", "")
         Ability.Attack(finalName, stat, extraHitModifier, reach, range, longRange, damage, extraText, use, legendaryCost)
     } else {
@@ -223,7 +265,7 @@ private fun parseRange(text: String): Pair<Int, Int?> {
 }
 
 private fun analyzeAttackStat(monster: Monster, toHit: Template.ToHit, stats: EnumSet<Stat>): Stat? {
-    val proficiencyBonus = ChallengeRating.invoke(monster.cr().cr()).proficiencyBonus
+    val proficiencyBonus = monster.proficiencyBonus
     return stats.firstOrNull { proficiencyBonus + monster.abilityModifier(it) == toHit.modifier }
 }
 
@@ -241,6 +283,7 @@ private fun Monster.abilityScore(stat: Stat) = when (stat) {
     Stat.CHARISMA -> cha()
 }
 
+private val Monster.proficiencyBonus get() = ChallengeRating.invoke(cr().cr()).proficiencyBonus
 private fun Monster.abilityModifier(stat: Stat) = mod(abilityScore(stat))
 
 @Suppress("UNCHECKED_CAST")
@@ -254,10 +297,10 @@ private fun <T> List<T>.split(condition: (T) -> Boolean): Pair<List<T>, List<T>>
     return Pair(match, noMatch)
 }
 
-private inline fun <reified T> List<*>.singleType(): T = singleTypeOrNull()
+inline fun <reified T> List<*>.singleType(): T = singleTypeOrNull()
     ?: error("Expected one ${T::class.simpleName}, but got $this")
-private inline fun <reified T> List<*>.singleTypeOrNull() = singleOrNull { it is T } as T?
-private inline fun <reified T> List<*>.firstType() = first { it is T } as T
+inline fun <reified T> List<*>.singleTypeOrNull() = singleOrNull { it is T } as T?
+inline fun <reified T> List<*>.firstType() = first { it is T } as T
 
 private val REACH = Regex("reach (\\d+) ft.")
 private val RANGE = Regex("range (\\d+)/?(\\d+)? ft.")

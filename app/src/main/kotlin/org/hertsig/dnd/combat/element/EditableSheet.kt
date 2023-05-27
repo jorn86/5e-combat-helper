@@ -54,8 +54,8 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
         val speed = remember { mutableStateOf(original.speed) }
         val senses = remember { mutableStateOf(original.senses) }
         val languages = remember { mutableStateOf(original.languages) }
-        val casterLevel = remember { mutableStateOf(original.spellSlots) }
-        val casterAbility = remember { mutableStateOf(original.casterAbility ?: Stat.INTELLIGENCE) }
+//        val casterLevel = remember { mutableStateOf(original.spellSlots) }
+//        val casterAbility = remember { mutableStateOf(original.casterAbility ?: Stat.INTELLIGENCE) }
         val proficientSaves = remember { original.proficientSaves.toMutableStateList() }
         val proficientSkills = remember { original.proficientSkills.toMutableStateList() }
         val expertiseSkills = remember { original.expertiseSkills.toMutableStateList() }
@@ -145,17 +145,17 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                 FormRow("Languages") {
                     BasicEditText(languages, Modifier.weight(1f)) { updated = updated.copy(languages = it) }
                 }
-                FormRow("Spellcasting") {
-                    BasicDropdown(casterLevel, Modifier.width(30.dp), onUpdate = {
-                        updated = updated.copy(spellSlots = it,
-                            casterAbility = if (it == CasterLevel.NONE) null else casterAbility.value)
-                    }) { it.display }
-                    if (casterLevel.value != CasterLevel.NONE) {
-                        BasicDropdown(casterAbility, Modifier.width(100.dp), onUpdate = {
-                            updated = updated.copy(casterAbility = it)
-                        })
-                    }
-                }
+//                FormRow("Spellcasting") {
+//                    BasicDropdown(casterLevel, Modifier.width(30.dp), onUpdate = {
+//                        updated = updated.copy(spellSlots = it,
+//                            casterAbility = if (it == CasterLevel.NONE) null else casterAbility.value)
+//                    }) { it.display }
+//                    if (casterLevel.value != CasterLevel.NONE) {
+//                        BasicDropdown(casterAbility, Modifier.width(100.dp), onUpdate = {
+//                            updated = updated.copy(casterAbility = it)
+//                        })
+//                    }
+//                }
                 if (abilityState.legendaryActions.isNotEmpty()) {
                     FormRow("Legendary actions") {
                         BasicEditNumber(legendaryActionUses, max = 5) {

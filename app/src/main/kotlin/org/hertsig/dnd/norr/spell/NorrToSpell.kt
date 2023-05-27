@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache
 import org.hertsig.core.logger
 import org.hertsig.core.warn
 import org.hertsig.dnd.combat.dto.Spell
+import org.hertsig.dnd.combat.dto.SpellSchool
 import org.hertsig.dnd.combat.dto.SpellText
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.norr.DAMAGE_TYPE
@@ -15,7 +16,6 @@ import org.hertsig.dnd.norr.parseNorrTemplate
 private val log = logger {}
 
 private val cache: LoadingCache<String, Spell?> = Caffeine.newBuilder()
-    .maximumSize(1000)
     .build { name: String -> getNorrSpell(name)?.let(::parseSpell) }
 
 fun getSpell(name: String) = cache[name]
@@ -38,7 +38,7 @@ private class SpellParser(private val spell: NorrSpell) {
             parseTime(spell.time()),
             parseDuration(spell.duration()),
             spell.components().display(),
-            spell.school(),
+            SpellSchool.get(spell.school()),
             spell.range().display(),
             spell.spellAttack().orEmpty().joinToString(";"),
             spell.savingThrow().orEmpty().joinToString(";"),
@@ -52,7 +52,7 @@ private class SpellParser(private val spell: NorrSpell) {
             when {
                 it.test<String>() -> text.addAll(parseSpellText(it.get()))
                 it.isMap() -> when (val type = it.getMapValue<String>("type")) {
-                    "entry" -> text.addAll(parseEntry(it.get()))
+                    "entry", "entries" -> text.addAll(parseEntry(it.get()))
                     "table" -> text.add(parseTable(it.get()))
                     "list" -> text.addAll(parseList(it.get()))
                     else -> { log.warn { "Unexpected entry type $type" }; it.analyze("Entry") }

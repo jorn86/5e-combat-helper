@@ -1,5 +1,8 @@
 package org.hertsig.dnd.combat.dto
 
+import org.hertsig.compose.display
+import org.hertsig.util.sub
+
 enum class Stat {
     STRENGTH,
     DEXTERITY,
@@ -9,6 +12,8 @@ enum class Stat {
     CHARISMA,
     ;
 }
+
+val Stat.shortDisplay get() = display.sub(end = 3)
 
 val StatBlock.scores get() = ScoresDelegate(this)
 val StatBlock.modifiers get() = ModsDelegate(this)

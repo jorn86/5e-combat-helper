@@ -1,8 +1,6 @@
 package org.hertsig.dnd.combat.element
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.LocalTextStyle
@@ -11,15 +9,19 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.flowlayout.FlowRow
-import org.hertsig.compose.component.HorizontalDivider
-import org.hertsig.compose.component.RowTextLine
-import org.hertsig.compose.component.TextLine
-import org.hertsig.compose.component.TooltipText
+import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
@@ -30,6 +32,8 @@ import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.log
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.d
+import org.hertsig.util.count
+import org.hertsig.util.plural
 
 private val log = logger {}
 
@@ -81,10 +85,6 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 TraitLine("Senses", statBlock.displaySenses(), singleLine = false)
 
                 TraitLine("Languages", statBlock.languages)
-                TraitLine(
-                    "Caster level", "${statBlock.spellSlots.display} (${statBlock.casterAbility?.display})",
-                    visible = statBlock.spellSlots != CasterLevel.NONE
-                )
                 FlowRow {
                     val allSkills = statBlock.allSkills
                     TraitLine("Skills", visible = allSkills.isNotEmpty())
@@ -94,6 +94,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 }
             }
 
+            SpellcastingBlock(statBlock)
             AbilityBlock("Traits", statBlock, statBlock.traits)
             AbilityBlock("Actions", statBlock, statBlock.actions)
             AbilityBlock("Bonus actions", statBlock, statBlock.bonusActions)
@@ -134,20 +135,117 @@ private fun AbilityScore(ability: String, statBlock: StatBlock, stat: Stat) {
 }
 
 @Composable
+private fun SpellcastingBlock(statBlock: StatBlock) {
+    if (statBlock.spellcasting.isNotEmpty()) {
+        TraitBlock("Spellcasting") {
+            statBlock.spellcasting.forEach { SpellcastingTraitBlock(statBlock, it) }
+        }
+    }
+}
+
+@Composable
+private fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait) {
+    Column {
+        TextLine(trait.name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
+        when (trait) {
+            is InnateSpellcasting -> {
+                Text("The ${statBlock.name}'s innate spellcasting ability is ${trait.stat.display} " +
+                        "(spell save DC ${8 + statBlock.modifierFor(trait.stat, true)}). " +
+                        "The ${statBlock.name} can innately cast the following spells, requiring no material components:"
+                )
+                SpellBlock(statBlock.name, trait.spellsWithLimit, ::innateLabel)
+            }
+            is SpellListCasting -> {
+                Text("The ${statBlock.name} is a ${trait.level.display}th-level spellcaster. " +
+                        "Its spellcasting ability is ${trait.stat.display} " +
+                        "(spell save DC ${8 + statBlock.modifierFor(trait.stat, true)}). " +
+                        "The ${statBlock.name} has the following ${trait.list} spells prepared:")
+                SpellBlock(statBlock.name, trait.spellsByLevel) { level ->
+                    when (level) {
+                        0 -> "Cantrip"
+                        else -> "${count(level)} level (${plural(trait.level[level], "slot")})"
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpellBlock(creatureName: String, spells: Map<Int, List<StatblockSpell>>, label: (Int) -> String) {
+    spells.forEach { (key, value) ->
+        FlowRow(mainAxisSpacing = 4.dp) {
+            TextLine(label(key) + ":", style = LocalTextStyle.current.copy(fontStyle = FontStyle.Italic))
+            value.forEachIndexed { index, it -> SpellDisplay(it, creatureName, index + 1 == value.size) }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SpellDisplay(spell: StatblockSpell, creatureName: String, last: Boolean = true) {
+    val realSpell = spell.resolve() ?: return
+    TooltipArea({ SpellDetail(realSpell) }, tooltipPlacement = TooltipPlacement.CursorPoint(DpOffset(0.dp, 16.dp), Alignment.BottomCenter)) {
+        val text = AnnotatedString.Builder()
+            .append(spell.name as CharSequence)
+            .withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                appendIf(spell.comment.isNotEmpty()) { " ${spell.comment}" }
+            }
+            .appendIf(!last) { "," }
+            .toAnnotatedString()
+        Text(text, spellClickable(realSpell, creatureName))
+    }
+}
+
+fun spellClickable(spell: Spell, creatureName: String): Modifier {
+    val damage = spell.damage ?: return Modifier
+    // TODO fix spell parsing & support cantrip damage and attack rolls
+    return Modifier.clickable { log(LogEntry.Roll(spell.name, creatureName, damage.roll())) }
+}
+
+private inline fun AnnotatedString.Builder.appendIf(condition: Boolean, text: () -> String): AnnotatedString.Builder {
+    if (condition) append(text())
+    return this
+}
+
+@Composable
+private fun SpellDetail(spell: Spell, maxWidth: Dp = 600.dp) {
+    Column(tooltipModifier(Color(0xfffafad0)).widthIn(max = maxWidth), Arrangement.spacedBy(4.dp)) {
+        TextLine(spell.name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
+        TextLine("${spell.school.display} ${spell.type}")
+        TextLine("${spell.time}, range ${spell.range}, duration ${spell.duration}")
+        Text(spell.text.filterIsInstance<SpellText.Text>().joinToString("\n") { it.text })
+    }
+}
+
+private fun innateLabel(perDay: Int) = when (perDay) {
+    0 -> "At will"
+    else -> "$perDay/day each"
+}
+
+@Composable
 private fun AbilityBlock(
     label: String,
     statBlock: StatBlock,
     abilities: List<Ability>,
     extraContent: @Composable ColumnScope.() -> Unit = {}
 ) {
-    if (abilities.isEmpty()) return
+    if (abilities.isNotEmpty()) {
+        TraitBlock(label) {
+            extraContent()
+            abilities.forEach { Ability(statBlock, it) }
+        }
+    }
+}
+
+@Composable
+private fun TraitBlock(label: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Column {
             TextLine(label, style = MaterialTheme.typography.h6)
             HorizontalDivider()
         }
-        extraContent()
-        abilities.forEach { Ability(statBlock, it) }
+        content()
     }
 }
 
@@ -220,7 +318,7 @@ fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, 
 }
 
 @Composable
-fun AbilityName(ability: Ability, roll: MultiDice?, name: String, creatureName: String) {
+private fun AbilityName(ability: Ability, roll: MultiDice?, name: String, creatureName: String) {
     if (roll == null) {
         TextLine(name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
     } else {
@@ -230,14 +328,14 @@ fun AbilityName(ability: Ability, roll: MultiDice?, name: String, creatureName: 
 }
 
 @Composable
-fun Use(use: Use?) {
+private fun Use(use: Use?) {
     if (use is Use.Limited) {
         TextLine(use.display)
     }
 }
 
 @Composable
-fun Recharge(recharge: Recharge, abilityName: String, creatureName: String) {
+private fun Recharge(recharge: Recharge, abilityName: String, creatureName: String) {
     if (recharge != Recharge.NO) {
         Roller(" (Recharge ${recharge.display})", MultiDice(1 d 6), creatureName, "$abilityName recharge", twice = false)
     }

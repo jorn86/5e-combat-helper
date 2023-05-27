@@ -1,9 +1,9 @@
 package org.hertsig.dnd.norr.spell
 
-import org.hertsig.compose.display
 import org.hertsig.dnd.combat.dto.Spell
 import org.hertsig.dnd.combat.dto.SpellText
 import org.hertsig.dnd.combat.dto.Stat
+import org.hertsig.dnd.combat.dto.shortDisplay
 import org.hertsig.dnd.norr.book.ClassSpellList
 import org.hertsig.dnd.norr.listNorrFiles
 import org.hertsig.dnd.norr.parseNorrTemplateText
@@ -11,6 +11,7 @@ import org.hertsig.dnd.norr.readJsonAsMap
 import org.hertsig.magic.DynamicMap
 import org.hertsig.magic.getAll
 import org.hertsig.magic.magicMap
+import org.hertsig.util.sub
 import kotlin.io.path.name
 
 fun getNorrSpell(name: String) = index[name.lowercase()]
@@ -24,7 +25,7 @@ private fun load(): Map<String, Spells> {
     return listNorrFiles("spells", "spells-*.json").associate {
         val data: Map<String, Any> = readJsonAsMap(it)
         val name = it.fileName.name
-        name.substring(7, name.length - 5) to magicMap(data)
+        name.sub(7, -5) to magicMap(data)
     }
 }
 
@@ -75,6 +76,6 @@ fun main() {
 private fun parseToHit(spell: Spell) = when {
     spell.attack == "M" -> "melee attack"
     spell.attack == "R" -> "ranged attack"
-    spell.savingThrow.isNotBlank() -> Stat.valueOf(spell.savingThrow.uppercase()).display.substring(0, 3) + " save"
+    spell.savingThrow.isNotBlank() -> Stat.valueOf(spell.savingThrow.uppercase()).shortDisplay + " save"
     else -> "-"
 }

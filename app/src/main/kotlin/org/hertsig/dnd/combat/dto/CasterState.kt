@@ -72,6 +72,19 @@ class CasterState(
         ninth.value = 0
     }
 
+    operator fun get(level: Int) = when (level) {
+        1 -> first.value
+        2 -> second.value
+        3 -> third.value
+        4 -> fourth.value
+        5 -> fifth.value
+        6 -> sixth.value
+        7 -> seventh.value
+        8 -> eighth.value
+        9 -> ninth.value
+        else -> error("Invalid spell level $level")
+    }
+
     private fun MutableState<Int>.use(total: Int) {
         value = (value + 1).coerceAtMost(total)
     }
@@ -115,17 +128,30 @@ enum class CasterLevel(
     NINETEEN(4, 3, 3, 3, 3, 2, 1, 1, 1),
     TWENTY(4, 3, 3, 3, 3, 2, 2, 1, 1),
 
-    WARLOCK_01(1),
-    WARLOCK_02(2),
-    WARLOCK_03(0, 2),
-    WARLOCK_05(0, 0, 2),
-    WARLOCK_07(0, 0, 0, 2),
-    WARLOCK_09(0, 0, 0, 0, 2),
-    WARLOCK_11(0, 0, 0, 0, 3),
-    WARLOCK_17(0, 0, 0, 0, 4),
+    WARLOCK_01(1, displayOverride = "Warlock 1"),
+    WARLOCK_02(2, displayOverride = "Warlock 2"),
+    WARLOCK_03(0, 2, displayOverride = "Warlock 3"),
+    WARLOCK_05(0, 0, 2, displayOverride = "Warlock 5"),
+    WARLOCK_07(0, 0, 0, 2, displayOverride = "Warlock 7"),
+    WARLOCK_09(0, 0, 0, 0, 2, displayOverride = "Warlock 9"),
+    WARLOCK_11(0, 0, 0, 0, 3, displayOverride = "Warlock 11"),
+    WARLOCK_17(0, 0, 0, 0, 4, displayOverride = "Warlock 17"),
     ;
 
     val display = displayOverride ?: ordinal.toString()
+
+    operator fun get(level: Int) = when (level) {
+        1 -> first
+        2 -> second
+        3 -> third
+        4 -> fourth
+        5 -> fifth
+        6 -> sixth
+        7 -> seventh
+        8 -> eighth
+        9 -> ninth
+        else -> error("Invalid spell level $level")
+    }
 
     companion object {
         operator fun invoke(level: Int, warlock: Boolean = false): CasterLevel {

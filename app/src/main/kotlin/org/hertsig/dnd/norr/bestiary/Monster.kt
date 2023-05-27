@@ -46,8 +46,8 @@ interface Monster {
     fun languages(): List<String>
     @Magic(mapper = ChallengeRatingMapper::class)
     fun cr(): CR
-    @Magic(elementType = Spellcasting::class)
-    fun spellcasting(): List<Spellcasting>?
+    @Magic(mapper = NullToEmptyList::class, elementType = Spellcasting::class)
+    fun spellcasting(): List<Spellcasting>
     @Magic(elementType = Entry::class)
     fun trait(): List<Entry>
     @Magic(elementType = Entry::class)
@@ -90,6 +90,10 @@ object NullToFalse : Mapper {
 }
 
 object NullToEmptyList : Mapper {
+    override fun invoke(value: Any?) = value ?: emptyList<Nothing>()
+}
+
+object NullToEmptyMap : Mapper {
     override fun invoke(value: Any?) = value ?: emptyList<Nothing>()
 }
 
