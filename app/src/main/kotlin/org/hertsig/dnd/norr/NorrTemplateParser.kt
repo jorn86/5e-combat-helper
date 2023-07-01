@@ -81,6 +81,7 @@ fun templateValue(match: MatchResult): Template {
     val text = match.groupValues[2].split("|").map { it.trim() }.filter { it.isNotBlank() }
     return when(val type = match.groupValues[1]) {
         "atk" -> Template.Attack(text.single().split(",").map(Template.Attack.Type::forText).toEnumSet())
+        "book" -> Template.Other(type, text.first())
         "condition" -> Template.Other(type, text.single())
         "damage" -> Template.Damage(parse(text.single()).singleUntyped())
         "dc" -> Template.DC(text.single().toInt())
@@ -90,8 +91,10 @@ fun templateValue(match: MatchResult): Template {
         "item" -> Template.Other(type, text.first())
         "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
         "quickref" -> Template.Other(type, text.first())
-        "spell" -> Template.Spell(text.single()) // make own implementation when needed
+        "sense" -> Template.Other(type, text.single())
+        "spell" -> Template.Spell(text.single())
         "skill" -> Template.Other(type, text.single()) // make own implementation when needed
+        "status" -> Template.Other(type, text.single())
         else -> Template.Other(type, match.groupValues[0])
     }
 }

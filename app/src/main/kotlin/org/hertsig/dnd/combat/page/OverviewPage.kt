@@ -42,7 +42,7 @@ fun OverviewPage(statBlocks: List<StatBlock>, modifier: Modifier, active: StatBl
                 BasicEditNumber(columns, 1, 6, suffix = "columns", width = 70.dp)
             }
             ScrollableFlowColumn(4.dp, 4.dp, ReorderStrategy, columns.value) {
-                statBlocks.forEach {
+                statBlocks.filter { it.visible }.forEach {
                     SmallStatBlock(it, it == active, expand)
                 }
             }
@@ -127,6 +127,6 @@ private fun DisplayAbilities(
 private fun DisplayAbility(ability: Ability, statBlock: StatBlock, expand: Boolean, addToName: String = "") {
     when (ability) {
         is Ability.Attack -> Attack(statBlock, ability, expand, addToName)
-        is Ability.Trait -> Trait(statBlock, ability, expand, addToName)
+        is Ability.Trait  ->  Trait(statBlock, ability, expand, addToName)
     }
 }

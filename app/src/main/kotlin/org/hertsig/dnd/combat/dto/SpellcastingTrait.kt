@@ -3,7 +3,11 @@ package org.hertsig.dnd.combat.dto
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import org.hertsig.core.debug
+import org.hertsig.core.logger
 import org.hertsig.dnd.norr.spell.getSpell
+
+private val log = logger {}
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
@@ -31,7 +35,10 @@ data class SpellListCasting(
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 data class StatblockSpell(val name: String, val comment: String = "") {
-    fun resolve() = getSpell(name)
+    fun resolve(): Spell? {
+        log.debug { "Resolving $name" }
+        return getSpell(name)
+    }
 }
 
 fun List<StatblockSpell>.resolve() = mapNotNull(StatblockSpell::resolve)

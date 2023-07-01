@@ -28,7 +28,6 @@ private class SpellParser(private val spell: NorrSpell) {
     val parsed by lazy { parse() }
 
     private fun parse(): Spell {
-//        spell.analyze("NorrSpell")
         parseText()
         return Spell(
             spell.name(),
@@ -63,6 +62,10 @@ private class SpellParser(private val spell: NorrSpell) {
         return Pair(text, emptyList())
     }
 
+    private fun parseEntry(entry: Entry): List<SpellText> {
+        return entry.entries().flatMap(::parseSpellText)
+    }
+
     private fun parseSpellText(text: String): List<SpellText> {
         val (text, templates) = text.parseNorrTemplate()
         val damages = templates.filterIsInstance<Template.Damage>().map { it.dice }
@@ -70,10 +73,6 @@ private class SpellParser(private val spell: NorrSpell) {
         val typedDamages = damages.zip(damageTypes) { damage, type -> damage(type) }
         if (typedDamages.isNotEmpty()) rolls.add(MultiDice(typedDamages))
         return listOf(SpellText.Text(text))
-    }
-
-    private fun parseEntry(entry: Entry): List<SpellText> {
-        return entry.entries().flatMap(::parseSpellText)
     }
 
     private fun parseTable(table: Table): SpellText {
