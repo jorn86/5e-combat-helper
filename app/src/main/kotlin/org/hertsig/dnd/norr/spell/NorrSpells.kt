@@ -18,6 +18,11 @@ fun getNorrSpell(name: String) = index[name.lowercase()]
 fun getNorrSpell(name: String, book: String) = data[book]?.spell().orEmpty()
     .firstOrNull { it.name().equals(name, ignoreCase = true) }
 
+fun findNorrSpells(text: String, limit: Int = 10) = index.keys
+    .filter { it.contains(text.lowercase()) }
+    .sortedWith(compareBy<String> { !it.startsWith(text, ignoreCase = true) }.thenComparing(String.CASE_INSENSITIVE_ORDER))
+    .take(limit)
+
 private val data by lazy { load() }
 private val index by lazy { data.values.flatMap { it.spell() }.associateBy { it.name().lowercase() } }
 

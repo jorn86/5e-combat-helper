@@ -50,7 +50,7 @@ class StatBlockState(
     }
 
     fun copy(original: StatBlock): StatBlock {
-        return add(original.copy(name = original.name + " (copy)"))
+        return add(original.copy(name = original.name + " (copy)", visible = true))
     }
 
     fun add(statBlock: StatBlock): StatBlock {

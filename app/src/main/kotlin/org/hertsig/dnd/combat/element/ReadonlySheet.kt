@@ -100,11 +100,13 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
             AbilityBlock("Bonus actions", statBlock, statBlock.bonusActions)
             AbilityBlock("Reactions", statBlock, statBlock.reactions)
             AbilityBlock("Legendary actions", statBlock, statBlock.legendaryActions) {
-                Text(
-                    "The ${statBlock.name} can take ${statBlock.legendaryActionUses} legendary actions, choosing from the options below. " +
-                            "Only one legendary action can be used at a time and only at the end of another creature's turn. " +
-                            "The ${statBlock.name} regains spent legendary actions at the start of its turn."
-                )
+                Text("${statBlock.genericName(true)} can take ${statBlock.legendaryActionUses} legendary actions, choosing from the options below. " +
+                        "Only one legendary action can be used at a time and only at the end of another creature's turn. " +
+                        "${statBlock.genericName(true)} regains spent legendary actions at the start of its turn.")
+            }
+            AbilityBlock("Lair actions", statBlock, statBlock.lairActions) {
+                Text("When fighting inside its lair, ${statBlock.genericName()} can take lair actions. On initiative count 20 " +
+                        "(losing initiative ties), ${statBlock.genericName()} can take one lair action to cause one of the following effects:")
             }
         }
     }
@@ -144,22 +146,25 @@ private fun SpellcastingBlock(statBlock: StatBlock) {
 }
 
 @Composable
-private fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait) {
+fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expand: Boolean = true) {
     Column {
         TextLine(trait.name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
         when (trait) {
             is InnateSpellcasting -> {
-                Text("The ${statBlock.name}'s innate spellcasting ability is ${trait.stat.display} " +
+                if (expand) {
+                    Text("${statBlock.genericName(true)}'s innate spellcasting ability is ${trait.stat.display} " +
                         "(spell save DC ${8 + statBlock.modifierFor(trait.stat, true)}). " +
-                        "The ${statBlock.name} can innately cast the following spells, requiring no material components:"
-                )
+                        "${statBlock.genericName(true)} can innately cast the following spells, requiring no material components:")
+                }
                 SpellBlock(statBlock.name, trait.spellsWithLimit, ::innateLabel)
             }
             is SpellListCasting -> {
-                Text("The ${statBlock.name} is a ${trait.level.display}th-level spellcaster. " +
+                if (expand) {
+                    Text("${statBlock.genericName(true)} is a ${trait.level.display}th-level spellcaster. " +
                         "Its spellcasting ability is ${trait.stat.display} " +
                         "(spell save DC ${8 + statBlock.modifierFor(trait.stat, true)}). " +
-                        "The ${statBlock.name} has the following ${trait.list} spells prepared:")
+                        "${statBlock.genericName(true)} has the following ${trait.list} spells prepared:")
+                }
                 SpellBlock(statBlock.name, trait.spellsByLevel) { level ->
                     when (level) {
                         0 -> "Cantrip"
@@ -174,26 +179,41 @@ private fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrai
 @Composable
 private fun SpellBlock(creatureName: String, spells: Map<Int, List<StatblockSpell>>, label: (Int) -> String) {
     spells.forEach { (key, value) ->
-        FlowRow(mainAxisSpacing = 4.dp) {
-            TextLine(label(key) + ":", style = LocalTextStyle.current.copy(fontStyle = FontStyle.Italic))
-            value.forEachIndexed { index, it -> SpellDisplay(it, creatureName, index + 1 == value.size) }
+        if (value.isNotEmpty()) {
+            FlowRow(mainAxisSpacing = 4.dp) {
+                TextLine(label(key) + ":", style = LocalTextStyle.current.copy(fontStyle = FontStyle.Italic))
+                value.forEachIndexed { index, spell ->
+                    spell.resolve()?.let {
+                        SpellDisplay(it, index + 1 == value.size, spell.comment, spellClickable(it, creatureName))
+                    }
+                }
+            }
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SpellDisplay(spell: StatblockSpell, creatureName: String, last: Boolean = true) {
-    val realSpell = spell.resolve() ?: return
-    TooltipArea({ SpellDetail(realSpell) }, tooltipPlacement = TooltipPlacement.CursorPoint(DpOffset(0.dp, 16.dp), Alignment.BottomCenter)) {
+fun SpellDisplay(
+    spell: Spell,
+    last: Boolean = true,
+    comment: String? = null,
+    textModifier: Modifier = Modifier,
+    tooltipModifier: Modifier = Modifier,
+) {
+    TooltipArea(
+        { SpellDetail(spell) },
+        tooltipModifier,
+        tooltipPlacement = TooltipPlacement.CursorPoint(DpOffset(0.dp, 16.dp), Alignment.BottomCenter)
+    ) {
         val text = AnnotatedString.Builder()
             .append(spell.name as CharSequence)
             .withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
-                appendIf(spell.comment.isNotEmpty()) { " ${spell.comment}" }
+                appendIf(!comment.isNullOrBlank()) { " $comment" }
             }
             .appendIf(!last) { "," }
             .toAnnotatedString()
-        Text(text, spellClickable(realSpell, creatureName))
+        TextLine(text, textModifier)
     }
 }
 
@@ -218,7 +238,7 @@ private fun SpellDetail(spell: Spell, maxWidth: Dp = 600.dp) {
     }
 }
 
-private fun innateLabel(perDay: Int) = when (perDay) {
+fun innateLabel(perDay: Int) = when (perDay) {
     0 -> "At will"
     else -> "$perDay/day each"
 }

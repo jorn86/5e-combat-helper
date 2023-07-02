@@ -22,7 +22,6 @@ fun updateStatBlock(monster: Monster, original: StatBlock = StatBlock()): StatBl
             return updateStatBlock(delegate, original).copy(name = monster.name())
         }
     }
-
     val cr = ChallengeRating(monster.cr().cr())
     val (proficient, expertise) = monster.analyzeSkills(cr.proficiencyBonus)
     val (trait, action, bonus, reaction, legendary) = monster.analyzeAbilities()
@@ -94,9 +93,9 @@ private fun Spellcasting.analyzeInnateSpellcasting(): InnateSpellcasting? {
     if (will.isEmpty() && daily == null) return null
     val spells = mapOf(
         0 to will,
-        1 to daily?.onePerDayEach().orEmpty(),
-        2 to daily?.twoPerDayEach().orEmpty(),
         3 to daily?.threePerDayEach().orEmpty(),
+        2 to daily?.twoPerDayEach().orEmpty(),
+        1 to daily?.onePerDayEach().orEmpty(),
     ).mapValues { (_, it) -> it.map(String::parseSpellNameTemplate) }
         .filterValues { it.isNotEmpty() }
     return InnateSpellcasting(name(), analyzeAbility(), spells)
@@ -131,7 +130,7 @@ private fun Spellcasting.analyzeListSpellcasting(): SpellListCasting? {
 
 private fun String.parseSpellNameTemplate(): StatblockSpell {
     var template: Template.Spell? = null
-    val text = parseNorrTemplateText {
+    val text = parseNorrTemplateText { it ->
         val spellTemplate = templateValue(it)
         if (spellTemplate is Template.Spell) template = spellTemplate
         ""
@@ -230,7 +229,7 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
         val extraText = parsedText.substringAfter("damage. ", "")
         Ability.Attack(finalName, stat, extraHitModifier, reach, range, longRange, damage, extraText, use, legendaryCost)
     } else {
-        val displayText = text.parseNorrTemplateText {
+        val displayText = text.parseNorrTemplateText { it ->
             val value = templateValue(it)
             if (value is Template.Damage) value.dice.asString(false) else value.text
         }
@@ -242,7 +241,7 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
 
 fun parseRecharge(text: String): Pair<String, Recharge> {
     var recharge = Recharge.NO
-    val parsedText = text.parseNorrTemplateText {
+    val parsedText = text.parseNorrTemplateText { it ->
         val value = templateValue(it)
         if (value is Template.Recharge) recharge = value.recharge
         value.text

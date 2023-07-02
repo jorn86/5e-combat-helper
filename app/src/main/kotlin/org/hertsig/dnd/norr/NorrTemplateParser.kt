@@ -7,19 +7,39 @@ import org.hertsig.dnd.combat.element.toEnumSet
 import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parse
+import org.hertsig.util.sub
 import java.util.*
+import java.util.regex.MatchResult
 
 private val templateRegex = Regex("\\{@(\\w+) (.+?)}")
 
 fun String.parseNorrTemplateText(replacement: (MatchResult) -> String = { templateValue(it).text }) =
-    replace(templateRegex, replacement)
+    parseNorrTemplateText { it, _, _ -> replacement(it) }
+
+fun String.parseNorrTemplateText(replacement: (MatchResult, Int, Int) -> String): String {
+    val result = StringBuilder()
+    var start = 0
+    Scanner(this).findAll(templateRegex.toPattern()).forEach {
+        result.append(substring(start, it.start()))
+        result.append(replacement(it, it.start(), it.end()))
+        start = it.end()
+    }
+    result.append(substring(start, length))
+    return result.toString()
+}
 
 fun String.parseNorrTemplate(): Pair<String, MutableList<Template>> {
     val templates = mutableListOf<Template>()
-    val text = parseNorrTemplateText {
+    val text = parseNorrTemplateText { it, _, matchEnd ->
         val template = templateValue(it)
-        templates.add(template)
-        template.text
+        if (template is Template.Damage) {
+            val type = this.sub(start = matchEnd + 1).substringBefore(' ', "")
+            templates.add(Template.DamgeWithType(template.dice(type)))
+            template.dice.asString(withType = false)
+        } else {
+            templates.add(template)
+            template.text
+        }
     }
     return text to templates
 }
@@ -53,6 +73,10 @@ sealed interface Template {
         override val text get() = DAMAGE_MARKER
     }
 
+    data class DamgeWithType(val dice: org.hertsig.dnd.dice.Dice): Template {
+        override val text get() = dice.asString()
+    }
+
     data class Dice(val dice: org.hertsig.dnd.dice.Dice): Template {
         override val text get() = dice.asString(short = true)
     }
@@ -78,8 +102,8 @@ sealed interface Template {
 
 @VisibleForTesting
 fun templateValue(match: MatchResult): Template {
-    val text = match.groupValues[2].split("|").map { it.trim() }.filter { it.isNotBlank() }
-    return when(val type = match.groupValues[1]) {
+    val text = match.group(2).split("|").map { it.trim() }.filter { it.isNotBlank() }
+    return when(val type = match.group(1)) {
         "atk" -> Template.Attack(text.single().split(",").map(Template.Attack.Type::forText).toEnumSet())
         "book" -> Template.Other(type, text.first())
         "condition" -> Template.Other(type, text.single())
@@ -91,11 +115,12 @@ fun templateValue(match: MatchResult): Template {
         "item" -> Template.Other(type, text.first())
         "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
         "quickref" -> Template.Other(type, text.first())
+        "scaledamage" -> Template.Damage(parse(text.last()).singleUntyped())
         "sense" -> Template.Other(type, text.single())
         "spell" -> Template.Spell(text.single())
         "skill" -> Template.Other(type, text.single()) // make own implementation when needed
         "status" -> Template.Other(type, text.single())
-        else -> Template.Other(type, match.groupValues[0])
+        else -> Template.Other(type, match.group(0))
     }
 }
 
@@ -107,4 +132,3 @@ private fun MultiDice.singleUntyped(): Dice {
 
 const val DAMAGE_MARKER = "<DMG>"
 internal val DAMAGE_TYPE_PAREN = Regex("\\($DAMAGE_MARKER\\) (\\w+)")
-internal val DAMAGE_TYPE = Regex("$DAMAGE_MARKER (\\w+)")

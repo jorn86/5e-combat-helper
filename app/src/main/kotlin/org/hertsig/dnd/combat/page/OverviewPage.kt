@@ -9,6 +9,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.flowlayout.FlowRow
 import org.hertsig.compose.component.BasicEditNumber
@@ -22,10 +23,7 @@ import org.hertsig.core.logger
 import org.hertsig.dnd.combat.component.displayForEach
 import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
-import org.hertsig.dnd.combat.element.Attack
-import org.hertsig.dnd.combat.element.Roller
-import org.hertsig.dnd.combat.element.Trait
-import org.hertsig.dnd.combat.element.TraitLine
+import org.hertsig.dnd.combat.element.*
 import org.hertsig.dnd.dice.MultiDice
 
 private val log = logger {}
@@ -96,12 +94,19 @@ fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolea
             TraitLine("Languages", statBlock.languages, singleLine = false)
         }
 
+        if (statBlock.spellcasting.isNotEmpty()) {
+            HorizontalDivider()
+            statBlock.spellcasting.forEach { SpellcastingTraitBlock(statBlock, it, expand) }
+        }
         DisplayAbilities(statBlock.traits, statBlock, expand)
         DisplayAbilities(statBlock.actions, statBlock, expand)
         DisplayAbilities(statBlock.bonusActions, statBlock, expand, " (bonus action)")
         DisplayAbilities(statBlock.reactions, statBlock, expand, " (reaction)")
         DisplayAbilities(statBlock.legendaryActions, statBlock, expand) {
             TraitLine("Legendary actions", statBlock.legendaryActionUses.toString())
+        }
+        DisplayAbilities(statBlock.lairActions, statBlock, expand) {
+            TextLine("Lair actions", style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
         }
     }
 }

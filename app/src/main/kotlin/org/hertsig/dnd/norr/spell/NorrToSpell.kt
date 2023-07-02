@@ -8,10 +8,10 @@ import org.hertsig.dnd.combat.dto.Spell
 import org.hertsig.dnd.combat.dto.SpellSchool
 import org.hertsig.dnd.combat.dto.SpellText
 import org.hertsig.dnd.dice.MultiDice
-import org.hertsig.dnd.norr.DAMAGE_TYPE
 import org.hertsig.dnd.norr.Entry
 import org.hertsig.dnd.norr.Template
 import org.hertsig.dnd.norr.parseNorrTemplate
+import org.hertsig.magic.DynamicEntry
 
 private val log = logger {}
 
@@ -47,36 +47,40 @@ private class SpellParser(private val spell: NorrSpell) {
     }
 
     private fun parseText(): Pair<List<SpellText>, List<MultiDice>> {
-        spell.entries().forEach {
-            when {
-                it.test<String>() -> text.addAll(parseSpellText(it.get()))
-                it.isMap() -> when (val type = it.getMapValue<String>("type")) {
-                    "entry", "entries" -> text.addAll(parseEntry(it.get()))
-                    "table" -> text.add(parseTable(it.get()))
-                    "list" -> text.addAll(parseList(it.get()))
-                    else -> { log.warn { "Unexpected entry type $type" }; it.analyze("Entry") }
-                }
-                else -> { log.warn("Unexpected entry class ${it.javaClass.simpleName}"); it.analyze("Entry") }
-            }
+        spell.entries().forEach(::parseSpellEntry)
+        if (spell.entriesHigherLevel().isNotEmpty()) {
+            text.add(SpellText.Text("\nAt higher levels:"))
+            spell.entriesHigherLevel().forEach(::parseSpellEntry)
         }
         return Pair(text, emptyList())
+    }
+
+    private fun parseSpellEntry(e: DynamicEntry) {
+        when {
+            e.test<String>() -> text.addAll(parseSpellText(e.get()))
+            e.isMap() -> when (val type = e.getMapValue<String>("type")) {
+                "entry", "entries" -> text.addAll(parseEntry(e.get()))
+                "table" -> text.add(parseTable(e.get()))
+                "list" -> text.addAll(parseList(e.get()))
+                else -> { log.warn { "Unexpected entry type $type" }; e.analyze("Entry") }
+            }
+            else -> { log.warn("Unexpected entry class ${e.javaClass.simpleName}"); e.analyze("Entry") }
+        }
     }
 
     private fun parseEntry(entry: Entry): List<SpellText> {
         return entry.entries().flatMap(::parseSpellText)
     }
 
-    private fun parseSpellText(text: String): List<SpellText> {
-        val (text, templates) = text.parseNorrTemplate()
-        val damages = templates.filterIsInstance<Template.Damage>().map { it.dice }
-        val damageTypes = DAMAGE_TYPE.findAll(text).map { it.groupValues[1] }.toList()
-        val typedDamages = damages.zip(damageTypes) { damage, type -> damage(type) }
-        if (typedDamages.isNotEmpty()) rolls.add(MultiDice(typedDamages))
+    private fun parseSpellText(rawText: String): List<SpellText> {
+        val (text, templates) = rawText.parseNorrTemplate()
+        val damages = templates.filterIsInstance<Template.DamgeWithType>().map { MultiDice(it.dice) }
+        rolls.addAll(damages)
         return listOf(SpellText.Text(text))
     }
 
     private fun parseTable(table: Table): SpellText {
-        return SpellText.Text(table.toString())
+        return SpellText.Text("(${table.caption()} table omitted)")
     }
 
     private fun parseList(list: EntryList): List<SpellText> {

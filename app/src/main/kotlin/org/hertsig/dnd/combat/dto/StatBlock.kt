@@ -33,7 +33,9 @@ data class StatBlock(
     val reactions: List<Ability> = emptyList(),
     val legendaryActions: List<Ability> = emptyList(),
     val legendaryActionUses: Int = 0,
+    val lairActions: List<Ability> = emptyList(),
     val spellcasting: List<SpellcastingTrait> = emptyList(),
+    val unique: Boolean = false,
     val visible: Boolean = true,
 ) {
     fun copy(stat: Stat, value: Int) = when (stat) {
@@ -47,4 +49,10 @@ data class StatBlock(
 
     override fun equals(other: Any?) = this === other
     override fun hashCode() = System.identityHashCode(this)
+}
+
+fun StatBlock.genericName(capitalize: Boolean = false) = when {
+    unique -> name
+    capitalize -> "The ${name.lowercase()}"
+    else -> "the ${name.lowercase()}"
 }

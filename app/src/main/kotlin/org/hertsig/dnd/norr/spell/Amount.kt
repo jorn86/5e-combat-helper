@@ -1,11 +1,20 @@
 package org.hertsig.dnd.norr.spell
 
-interface Amount {
-    fun display() = listOfNotNull(amount(), when (val it = type()) {
-        "feet" -> "ft."
-        else -> it
-    }).joinToString(" ")
+import org.hertsig.util.plural
 
-    fun type(): String
+interface Amount {
+    fun display() = displayAmount(amount(), type())
+
     fun amount(): Int?
+    fun type(): String
+}
+
+internal fun displayAmount(amount: Int?, type: String): String {
+    return when {
+        amount == null -> type
+        type == "feet" -> "$amount ft."
+        type == "action" -> "Action"
+        type == "bonus" -> "Bonus action"
+        else -> plural(amount, type)
+    }
 }

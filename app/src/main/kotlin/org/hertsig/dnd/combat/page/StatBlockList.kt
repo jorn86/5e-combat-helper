@@ -58,7 +58,7 @@ fun StatBlockList(
                     RowTextLine(
                         it.name,
                         Modifier.weight(1f),
-                        align = TextAlign.Center,
+                        textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.subtitle1
                     )
                     if (it.challengeRating != ChallengeRating.NONE) RowTextLine("  (${it.challengeRating.display})")

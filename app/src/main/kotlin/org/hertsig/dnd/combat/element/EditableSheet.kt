@@ -1,6 +1,7 @@
 package org.hertsig.dnd.combat.element
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Checkbox
 import androidx.compose.material.Icon
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
@@ -19,7 +20,6 @@ import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.compose.display
-import org.hertsig.core.logger
 import org.hertsig.dnd.combat.Page
 import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
@@ -29,9 +29,8 @@ import org.hertsig.dnd.dice.parseOptional
 import org.hertsig.dnd.norr.bestiary.Monster
 import org.hertsig.dnd.norr.bestiary.getFromBestiary
 import org.hertsig.dnd.norr.bestiary.updateStatBlock
+import org.hertsig.dnd.norr.spell.findNorrSpells
 import java.util.*
-
-private val log = logger {}
 
 @Composable
 fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifier) {
@@ -54,8 +53,7 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
         val speed = remember { mutableStateOf(original.speed) }
         val senses = remember { mutableStateOf(original.senses) }
         val languages = remember { mutableStateOf(original.languages) }
-//        val casterLevel = remember { mutableStateOf(original.spellSlots) }
-//        val casterAbility = remember { mutableStateOf(original.casterAbility ?: Stat.INTELLIGENCE) }
+        val spellcasting = remember { original.spellcasting.toMutableStateList() }
         val proficientSaves = remember { original.proficientSaves.toMutableStateList() }
         val proficientSkills = remember { original.proficientSkills.toMutableStateList() }
         val expertiseSkills = remember { original.expertiseSkills.toMutableStateList() }
@@ -65,8 +63,10 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
             remember { original.bonusActions.toMutableStateList() },
             remember { original.reactions.toMutableStateList() },
             remember { original.legendaryActions.toMutableStateList() },
+            remember { original.lairActions.toMutableStateList() },
         )
         val legendaryActionUses = remember { mutableStateOf(original.legendaryActionUses) }
+        var unique by remember { mutableStateOf(original.unique) }
 
         var bestiaryEntry by remember { mutableStateOf<Monster?>(null) }
         LaunchedEffect(name.value) { bestiaryEntry = getFromBestiary(name.value) }
@@ -81,6 +81,8 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                     BasicEditText(name, Modifier.weight(1f).autoFocus()) {
                         updated = updated.copy(name = it)
                     }
+                    Checkbox(unique, { unique = it; updated = updated.copy(unique = it)})
+                    TextLine("Unique")
                     SmallButton(::loadFromBestiary, enabled = bestiaryEntry != null) { TextLine("Load") }
                 }
                 FormRow("Size") {
@@ -169,11 +171,13 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                 ProficiencyBlock("Expertise skills", expertiseSkills) { updated = updated.copy(expertiseSkills = it) }
             }
 
+            SpellcastingBlock(spellcasting, updatedState)
             AbilityBlock(TRAITS, abilityState, updatedState)
             AbilityBlock(ACTIONS, abilityState, updatedState)
             AbilityBlock(BONUS_ACTIONS, abilityState, updatedState)
             AbilityBlock(REACTIONS, abilityState, updatedState)
             AbilityBlock(LEGENDARY_ACTIONS, abilityState, updatedState)
+            AbilityBlock(LAIR_ACTIONS, abilityState, updatedState)
         }
     }
 }
@@ -215,10 +219,105 @@ private fun <E: Enum<E>> ProficiencyBlock(
 }
 
 @Composable
-private fun FormRow(label: String, content: @Composable RowScope.() -> Unit) {
+private fun FormRow(
+    label: String,
+    labelWidh: Dp = 160.dp,
+    labelAlign: Alignment.Vertical = Alignment.CenterVertically,
+    content: @Composable RowScope.() -> Unit,
+) {
     SpacedRow(vertical = Alignment.CenterVertically) {
-        RowTextLine(label, Modifier.width(160.dp))
+        RowTextLine(label, Modifier.width(labelWidh), labelAlign = labelAlign)
         content()
+    }
+}
+
+@Composable
+private fun SpellcastingBlock(traits: MutableList<SpellcastingTrait>, updatedState: MutableState<StatBlock>) {
+    Column {
+        if (traits.isEmpty()) {
+            TextLine("Spellcasting", style = MaterialTheme.typography.h6)
+            HorizontalDivider()
+        }
+        traits.forEachIndexed { index, it ->
+            TextLine(it.name, style = MaterialTheme.typography.h6)
+            HorizontalDivider()
+            SpacedColumn {
+                when (it) {
+                    is InnateSpellcasting -> EditInnateSpellcasting(traits, it, index, updatedState)
+                    is SpellListCasting -> { /* TODO */ }
+                }
+            }
+        }
+        SpacedRow {
+//            SmallButton({ traits.add(SpellListCasting("Spellcasting", "Wizard", Stat.INTELLIGENCE, CasterLevel.ONE, mapOf())) }) {
+//                RowTextLine("Spell list")
+//            }
+            SmallButton({ traits.add(InnateSpellcasting("Innate spellcasting", Stat.CHARISMA, mapOf())) }) {
+                RowTextLine("Innate")
+            }
+        }
+    }
+}
+@Composable
+private fun EditInnateSpellcasting(traits: MutableList<SpellcastingTrait>, trait: InnateSpellcasting, index: Int, updatedState: MutableState<StatBlock>) {
+    val state = InnateSpellcastingState(
+        remember { mutableStateOf(trait.stat) },
+        remember { trait.spellsWithLimit[0].orEmpty().toMutableStateList() },
+        remember { trait.spellsWithLimit[3].orEmpty().toMutableStateList() },
+        remember { trait.spellsWithLimit[2].orEmpty().toMutableStateList() },
+        remember { trait.spellsWithLimit[1].orEmpty().toMutableStateList() },
+    )
+
+    var updated by updatedState
+    val update = remember(traits, index) { { it: SpellcastingTrait ->
+        traits[index] = it
+        updated = updated.copy(spellcasting = traits.toList())
+    } }
+    FormRow("Spellcasting ability") {
+        BasicDropdown(state.stat, onUpdate = { update(trait.copy(stat = it)) })
+    }
+    EditSpellList(innateLabel(0), state.atWill) { update(trait.copy(spellsWithLimit = trait.spellsWithLimit.update(0, it))) }
+    EditSpellList(innateLabel(3), state.threePerDay) { update(trait.copy(spellsWithLimit = trait.spellsWithLimit.update(3, it))) }
+    EditSpellList(innateLabel(2), state.twoPerDay) { update(trait.copy(spellsWithLimit = trait.spellsWithLimit.update(2, it))) }
+    EditSpellList(innateLabel(1), state.onePerDay) { update(trait.copy(spellsWithLimit = trait.spellsWithLimit.update(1, it))) }
+}
+
+@Composable
+private fun EditSpellList(title: String, spells: MutableList<StatblockSpell>, update: (List<StatblockSpell>?) -> Unit) {
+    FormRow(title, labelAlign = Alignment.Top) {
+        SpacedColumn {
+            spells.forEachIndexed { index, it ->
+                EditSpell(spells, index, it, update)
+            }
+            SpacedRow {
+                Autocompleter(
+                    { if (it.isBlank()) emptyList() else findNorrSpells(it.trim()) },
+                    Modifier.weight(1f),
+                    "Add new spell",
+                ) {
+                    spells.add(StatblockSpell(it))
+                    spells.sortBy { s -> s.name }
+                    update(spells)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditSpell(
+    spells: MutableList<StatblockSpell>,
+    index: Int,
+    spell: StatblockSpell,
+    update: (List<StatblockSpell>) -> Unit,
+) {
+    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+        SpacedRow {
+            val comment = remember(spell) { mutableStateOf(spell.comment) }
+            SpellDisplay(spell.resolve()!!, tooltipModifier = Modifier.weight(1f))
+            BasicEditText(comment, Modifier.weight(1f), "(comment)") { spells[index] = spell.copy(comment = it); update(spells) }
+            IconButton({ spells.removeAt(index); update(spells) }, Icons.Default.Close, iconSize = 16.dp)
+        }
     }
 }
 
@@ -240,7 +339,6 @@ private fun AbilityBlock(
 
             SpacedRow {
                 val defaultCost = if (type == LEGENDARY_ACTIONS) 1 else null
-                // Don't call save() yet when adding empty new abilities
                 if (type != TRAITS) {
                     SmallButton({ abilities.add(Ability.Attack(legendaryCost = defaultCost)) }) { RowTextLine("Attack") }
                 }
@@ -269,12 +367,10 @@ private fun EditAttack(type: AbilityType, index: Int, state: AbilityState, abili
     val extra = remember(ability) { mutableStateOf(ability.extra) }
     val abilities = state[type]
     var updated by updatedState
-    val update = remember(type, index, abilities) {
-        { it: Ability ->
+    val update = remember(type, index, abilities) { { it: Ability ->
             abilities[index] = it
             updated = updated.copy(type, abilities)
-        }
-    }
+    } }
 
     EditAbility(type, index, state, ability, updatedState) {
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
@@ -447,39 +543,14 @@ inline fun <reified E : Enum<E>> Collection<E>.toEnumSet(): EnumSet<E> =
 
 fun String?.cap() = orEmpty().replaceFirstChar { it.uppercase() }
 
-private data class AbilityState(
-    val traits: MutableList<Ability>,
-    val actions: MutableList<Ability>,
-    val bonusActions: MutableList<Ability>,
-    val reactions: MutableList<Ability>,
-    val legendaryActions: MutableList<Ability>,
-) {
-    operator fun get(type: AbilityType) = when(type) {
-        TRAITS -> traits
-        ACTIONS -> actions
-        BONUS_ACTIONS -> bonusActions
-        REACTIONS -> reactions
-        LEGENDARY_ACTIONS -> legendaryActions
-    }
-}
-
-private enum class AbilityType {
-    TRAITS, ACTIONS, BONUS_ACTIONS, REACTIONS, LEGENDARY_ACTIONS
-}
-
-private fun StatBlock.copy(type: AbilityType, value: List<Ability>): StatBlock {
-    val copy = value.toList()
-    return when (type) {
-        TRAITS -> copy(traits = copy)
-        ACTIONS -> copy(actions = copy)
-        BONUS_ACTIONS -> copy(bonusActions = copy)
-        REACTIONS -> copy(reactions = copy)
-        LEGENDARY_ACTIONS -> copy(legendaryActions = copy)
-    }
-}
-
 private fun <T> MutableList<T>.swap(firstIndex: Int, secondIndex: Int) {
     val element = this[firstIndex]
     this[firstIndex] = this[secondIndex]
     this[secondIndex] = element
+}
+
+private fun <K, V> Map<K, List<V>>.update(key: K, value: List<V>?): Map<K, List<V>> {
+    val result = this as? MutableMap<K, List<V>> ?: toMutableMap()
+    if (value.isNullOrEmpty()) result.remove(key) else result[key] = value
+    return result
 }
