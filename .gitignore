@@ -3,6 +3,6 @@ build/
 wix311/
 
 .idea/
-data/*.json
+desktop/data/*.json
 
 app/src/test/kotlin/org/hertsig/dnd/combat/norr/*

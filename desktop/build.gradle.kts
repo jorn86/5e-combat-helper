@@ -27,10 +27,9 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                api(project(":kotlin-library:compose"))
+                api(project(":common"))
 
                 implementation(compose.desktop.currentOs)
-                implementation(compose.materialIconsExtended)
 
                 implementation("com.fasterxml.jackson.core:jackson-core:2.14.1")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.1")
@@ -47,6 +46,8 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "org.hertsig.dnd.combat.AppKt"
+        jvmArgs += "-DnorrFolder=${System.getProperty("norrFolder")}"
+        jvmArgs += "-DbackupFolder=${System.getProperty("backupFolder")}"
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
             packageName = "dnd.combat"

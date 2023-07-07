@@ -9,14 +9,15 @@ pluginManagement {
 
     plugins {
         kotlin("multiplatform").version(extra["kotlin.version"] as String)
+        kotlin("plugin.serialization").version(extra["kotlin.version"] as String)
         id("org.jetbrains.compose").version(extra["compose.version"] as String)
     }
 }
 
 rootProject.name = "5e-combat-helper"
 
-include("app")
-//include("core")
-//include("compose-library")
+include("common")
+include("desktop")
+//include("web")
 include("kotlin-library:core")
 include("kotlin-library:compose")

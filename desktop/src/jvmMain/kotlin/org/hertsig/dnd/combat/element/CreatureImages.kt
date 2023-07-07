@@ -27,13 +27,13 @@ private val imageCache = Caffeine.newBuilder()
 private object ImageLoader : CacheLoader<String, Optional<ImageBitmap>> {
     @OptIn(ExperimentalPathApi::class)
     override fun load(creatureName: String): Optional<ImageBitmap> {
-        val folder = System.getProperty("imageFolder")
+        val folder = System.getProperty("norrFolder")
         if (folder == null) {
             log.debug("No image folder configured")
             return Optional.empty()
         }
 
-        val realFolder = Path(folder).absolute()
+        val realFolder = Path(folder).resolve("../img").absolute()
         val imageFile = realFolder.walk().firstOrNull { it.fileName.toString().equals("$creatureName.png", true) }
         return if (imageFile == null) {
             log.debug { "Image file for $creatureName not found in $folder" }
