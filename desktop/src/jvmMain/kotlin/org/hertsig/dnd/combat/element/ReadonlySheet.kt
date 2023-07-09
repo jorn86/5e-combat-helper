@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.flowlayout.FlowRow
+import org.hertsig.compose.append
+import org.hertsig.compose.build
 import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
@@ -324,22 +326,32 @@ fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true,
 @Composable
 fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, addToName: String = "") {
     val name = ability.name + addToName + ability.costDisplay()
-    @Composable fun content() {
-        AbilityName(ability, ability.roll, name, statBlock.name)
-        Use(ability.use)
-        Recharge(ability.recharge, ability.name, statBlock.name)
-    }
     if (expand) {
         Column {
-            Row {
-                content()
-                TextLine(":")
-            }
-            Text(ability.description)
+            val bold = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold)
+            RichText(rememberRichText(ability, addToName) {
+                paragraph {
+                    val title = AnnotatedString.Builder()
+                        .append(SpanStyle(fontWeight = FontWeight.Bold), name)
+                        .build()
+                    text(title, Modifier.roll(ability.roll, name, statBlock.name, false), bold)
+                    if (ability.use is Use.Limited) text(" ${ability.use.display}")
+                    if (ability.recharge != Recharge.NO) {
+                        text(" (Recharge ${ability.recharge.display})",
+                            Modifier.roll(MultiDice(1 d 6), statBlock.name, "${ability.name} recharge", false))
+                    }
+                    text(": ")
+                    breakingText(ability.description)
+                }
+            })
         }
     } else {
         TooltipText(ability.description) {
-            FlowRow { content() } // TODO test if flow is OK
+            FlowRow {
+                AbilityName(ability, ability.roll, name, statBlock.name)
+                Use(ability.use)
+                Recharge(ability.recharge, ability.name, statBlock.name)
+            }
         }
     }
 }

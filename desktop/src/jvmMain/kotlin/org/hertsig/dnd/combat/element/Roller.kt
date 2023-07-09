@@ -12,7 +12,12 @@ import org.hertsig.dnd.dice.MultiDice
 
 @Composable
 fun Roller(text: String, dice: MultiDice, name: String, rollText: String = text, style: TextStyle = LocalTextStyle.current, twice: Boolean = true) {
-    TextLine(text, Modifier.clickable {
+    TextLine(text, Modifier.roll(dice, name, rollText, twice), style = style)
+}
+
+fun Modifier.roll(dice: MultiDice?, name: String, rollText: String, twice: Boolean = true): Modifier {
+    if (dice == null) return this
+    return clickable {
         log(LogEntry.Roll(name, rollText, dice.roll(), if (twice) dice.roll() else null))
-    }, style = style)
+    }
 }
