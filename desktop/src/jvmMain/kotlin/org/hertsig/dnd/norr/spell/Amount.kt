@@ -15,6 +15,6 @@ internal fun displayAmount(amount: Int?, type: String): String {
         type == "feet" -> "$amount ft."
         type == "action" -> "Action"
         type == "bonus" -> "Bonus action"
-        else -> plural(amount, type)
+        else -> plural(amount, type.trimEnd('s'))
     }
 }

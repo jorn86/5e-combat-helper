@@ -128,14 +128,14 @@ enum class CasterLevel(
     NINETEEN(4, 3, 3, 3, 3, 2, 1, 1, 1),
     TWENTY(4, 3, 3, 3, 3, 2, 2, 1, 1),
 
-    WARLOCK_01(1, displayOverride = "Warlock 1"),
-    WARLOCK_02(2, displayOverride = "Warlock 2"),
-    WARLOCK_03(0, 2, displayOverride = "Warlock 3"),
-    WARLOCK_05(0, 0, 2, displayOverride = "Warlock 5"),
-    WARLOCK_07(0, 0, 0, 2, displayOverride = "Warlock 7"),
-    WARLOCK_09(0, 0, 0, 0, 2, displayOverride = "Warlock 9"),
-    WARLOCK_11(0, 0, 0, 0, 3, displayOverride = "Warlock 11"),
-    WARLOCK_17(0, 0, 0, 0, 4, displayOverride = "Warlock 17"),
+    WARLOCK_01(1, displayOverride = "1"),
+    WARLOCK_02(2, displayOverride = "2"),
+    WARLOCK_03(0, 2, displayOverride = "3"),
+    WARLOCK_05(0, 0, 2, displayOverride = "5"),
+    WARLOCK_07(0, 0, 0, 2, displayOverride = "7"),
+    WARLOCK_09(0, 0, 0, 0, 2, displayOverride = "9"),
+    WARLOCK_11(0, 0, 0, 0, 3, displayOverride = "11"),
+    WARLOCK_17(0, 0, 0, 0, 4, displayOverride = "17"),
     ;
 
     val display = displayOverride ?: ordinal.toString()
@@ -154,6 +154,10 @@ enum class CasterLevel(
     }
 
     companion object {
+        val FULL = values().slice(1..20)
+        val HALF = values().slice(1..10)
+        val WARLOCK = values().slice(21..28)
+
         operator fun invoke(level: Int, warlock: Boolean = false): CasterLevel {
             require(level in (0..20)) { "No CasterLevel entry for $level" }
             if (warlock) {

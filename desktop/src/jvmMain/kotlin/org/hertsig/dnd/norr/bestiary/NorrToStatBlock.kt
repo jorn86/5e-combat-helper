@@ -110,6 +110,11 @@ private fun Spellcasting.analyzeListSpellcasting(): SpellListCasting? {
     val list = Regex("following (\\w+) spells").find(headerText)?.groupValues?.getOrNull(1)
         ?: Regex("the (\\w+) spell list").find(headerText)?.groupValues?.getOrNull(1)
         ?: "?"
+    val spellList = SpellList.values().singleOrNull { it.name.equals(list, true) }
+    val ability = analyzeAbility()
+    if (spellList?.stat != ability) {
+        log.warn("Spellcasting mismatch: $spellList with $ability")
+    }
     val parsedSpells = mapOf(
         0 to spells.cantrips(),
         1 to spells.firstLevel(),
@@ -124,7 +129,7 @@ private fun Spellcasting.analyzeListSpellcasting(): SpellListCasting? {
     ).filterValuesNotNull()
         // consider checking it.slots() with parsed caster level
         .mapValues { (_, it) -> it.spells().map { it.parseSpellNameTemplate() } }
-    return SpellListCasting(name(), list, analyzeAbility(), level, parsedSpells)
+    return SpellListCasting(name(), spellList ?: SpellList.WIZARD, level, parsedSpells)
 }
 
 private fun String.parseSpellNameTemplate(): StatblockSpell {

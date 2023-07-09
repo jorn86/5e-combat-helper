@@ -100,13 +100,19 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
             AbilityBlock("Bonus actions", statBlock, statBlock.bonusActions)
             AbilityBlock("Reactions", statBlock, statBlock.reactions)
             AbilityBlock("Legendary actions", statBlock, statBlock.legendaryActions) {
-                Text("${statBlock.genericName(true)} can take ${statBlock.legendaryActionUses} legendary actions, choosing from the options below. " +
-                        "Only one legendary action can be used at a time and only at the end of another creature's turn. " +
-                        "${statBlock.genericName(true)} regains spent legendary actions at the start of its turn.")
+                Text(
+                    "${statBlock.genericName(true)} can take ${statBlock.legendaryActionUses} legendary actions, choosing from the options below. " +
+                            "Only one legendary action can be used at a time and only at the end of another creature's turn. " +
+                            "${statBlock.genericName(true)} regains spent legendary actions at the start of ${
+                                statBlock.pronoun(
+                                    false
+                                )
+                            } turn.")
             }
             AbilityBlock("Lair actions", statBlock, statBlock.lairActions) {
-                Text("When fighting inside its lair, ${statBlock.genericName()} can take lair actions. On initiative count 20 " +
-                        "(losing initiative ties), ${statBlock.genericName()} can take one lair action to cause one of the following effects:")
+                Text(
+                    "When fighting inside ${statBlock.pronoun(false)} lair, ${statBlock.genericName()} can take lair actions. On initiative count 20 " +
+                            "(losing initiative ties), ${statBlock.genericName()} can take one lair action to cause one of the following effects:")
             }
         }
     }
@@ -160,10 +166,11 @@ fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expan
             }
             is SpellListCasting -> {
                 if (expand) {
-                    Text("${statBlock.genericName(true)} is a ${trait.level.display}th-level spellcaster. " +
-                        "Its spellcasting ability is ${trait.stat.display} " +
-                        "(spell save DC ${8 + statBlock.modifierFor(trait.stat, true)}). " +
-                        "${statBlock.genericName(true)} has the following ${trait.list} spells prepared:")
+                    Text(
+                        "${statBlock.genericName(true)} is a ${trait.level.display}th-level spellcaster. " +
+                                "${statBlock.pronoun(true)} spellcasting ability is ${trait.list.stat.display} " +
+                        "(spell save DC ${8 + statBlock.modifierFor(trait.list.stat, true)}). " +
+                        "${statBlock.genericName(true)} has the following ${trait.list.display} spells prepared:")
                 }
                 SpellBlock(statBlock.name, trait.spellsByLevel) { level ->
                     when (level) {

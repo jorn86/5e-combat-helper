@@ -1,6 +1,7 @@
 package org.hertsig.dnd.combat.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import org.hertsig.util.applyIf
 import java.util.*
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -56,3 +57,5 @@ fun StatBlock.genericName(capitalize: Boolean = false) = when {
     capitalize -> "The ${name.lowercase()}"
     else -> "the ${name.lowercase()}"
 }
+
+fun StatBlock.pronoun(capitalize: Boolean) = (if (unique) "Their" else "Its").applyIf(!capitalize) { lowercase() }

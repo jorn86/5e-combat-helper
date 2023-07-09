@@ -22,6 +22,7 @@ import org.hertsig.compose.component.flow.ScrollableFlowColumn
 import org.hertsig.dnd.combat.Page
 import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
+import org.hertsig.dnd.combat.dto.SpellList.*
 import org.hertsig.dnd.combat.element.AbilityType.*
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parseOptional
@@ -244,23 +245,25 @@ private fun SpellcastingBlock(traits: MutableList<SpellcastingTrait>, updatedSta
             SpacedColumn {
                 when (it) {
                     is InnateSpellcasting -> EditInnateSpellcasting(traits, it, index, updatedState)
-                    is SpellListCasting -> { /* TODO */ }
+                    is SpellListCasting -> { EditSpellListCasting(traits, it, index, updatedState) }
                 }
             }
         }
         SpacedRow {
-//            SmallButton({ traits.add(SpellListCasting("Spellcasting", "Wizard", Stat.INTELLIGENCE, CasterLevel.ONE, mapOf())) }) {
-//                RowTextLine("Spell list")
-//            }
+            SmallButton({ traits.add(SpellListCasting("Spellcasting", WIZARD, CasterLevel.ONE, mapOf())) }) {
+                RowTextLine("Spell list")
+            }
             SmallButton({ traits.add(InnateSpellcasting("Innate spellcasting", Stat.CHARISMA, mapOf())) }) {
                 RowTextLine("Innate")
             }
         }
     }
 }
+
 @Composable
 private fun EditInnateSpellcasting(traits: MutableList<SpellcastingTrait>, trait: InnateSpellcasting, index: Int, updatedState: MutableState<StatBlock>) {
     val state = InnateSpellcastingState(
+        remember { mutableStateOf(trait.name) },
         remember { mutableStateOf(trait.stat) },
         remember { trait.spellsWithLimit[0].orEmpty().toMutableStateList() },
         remember { trait.spellsWithLimit[3].orEmpty().toMutableStateList() },
@@ -273,6 +276,9 @@ private fun EditInnateSpellcasting(traits: MutableList<SpellcastingTrait>, trait
         traits[index] = it
         updated = updated.copy(spellcasting = traits.toList())
     } }
+    FormRow("Name") {
+        BasicEditText(state.name) { update(trait.copy(name = it)) }
+    }
     FormRow("Spellcasting ability") {
         BasicDropdown(state.stat, onUpdate = { update(trait.copy(stat = it)) })
     }
@@ -280,6 +286,39 @@ private fun EditInnateSpellcasting(traits: MutableList<SpellcastingTrait>, trait
     EditSpellList(innateLabel(3), state.threePerDay) { update(trait.copy(spellsWithLimit = trait.spellsWithLimit.update(3, it))) }
     EditSpellList(innateLabel(2), state.twoPerDay) { update(trait.copy(spellsWithLimit = trait.spellsWithLimit.update(2, it))) }
     EditSpellList(innateLabel(1), state.onePerDay) { update(trait.copy(spellsWithLimit = trait.spellsWithLimit.update(1, it))) }
+}
+
+@Composable
+private fun EditSpellListCasting(traits: MutableList<SpellcastingTrait>, trait: SpellListCasting, index: Int, updatedState: MutableState<StatBlock>) {
+    val state = SpellListCastingState(
+        remember { mutableStateOf(trait.name) },
+        remember { mutableStateOf(trait.list) },
+        remember { mutableStateOf(trait.level) },
+        remember { trait.spellsByLevel.values.flatten().toMutableStateList() },
+    )
+    var updated by updatedState
+    val update = remember(traits, index) { { it: SpellcastingTrait ->
+        traits[index] = it
+        updated = updated.copy(spellcasting = traits.toList())
+    } }
+    FormRow("Class & level") {
+        BasicDropdown(state.list, onUpdate = {
+            val updated = trait.updateList(it)
+            update(updated)
+            state.level.value = updated.level
+        })
+        val levels = when (state.list.value) {
+            WARLOCK -> CasterLevel.WARLOCK
+            RANGER, PALADIN, ARTIFICER -> CasterLevel.HALF
+            else -> CasterLevel.FULL
+        }
+        BasicDropdown(state.level, levels, onUpdate = {
+            update(trait.copy(level = it))
+        }) { it.display }
+    }
+    EditSpellList("Spells known", state.spells) {
+        update(trait.copy(spellsByLevel = it.orEmpty().groupBy { it.resolve()!!.level }.toSortedMap()))
+    }
 }
 
 @Composable

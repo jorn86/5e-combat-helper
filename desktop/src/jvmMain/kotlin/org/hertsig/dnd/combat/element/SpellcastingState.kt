@@ -6,6 +6,7 @@ import org.hertsig.dnd.combat.dto.Stat
 import org.hertsig.dnd.combat.dto.StatblockSpell
 
 data class InnateSpellcastingState(
+    val name: MutableState<String>,
     val stat: MutableState<Stat>,
     val atWill: SnapshotStateList<StatblockSpell>,
     val threePerDay: SnapshotStateList<StatblockSpell>,
