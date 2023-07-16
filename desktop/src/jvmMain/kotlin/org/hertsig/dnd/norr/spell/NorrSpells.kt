@@ -21,7 +21,7 @@ fun findNorrSpells(text: String, limit: Int = 10) = index.keys
 private val data by lazy { load() }
 private val index by lazy { data.values.flatMap { it.spell() }.associateBy { it.name().lowercase() } }
 
-private fun load(): Map<String, Spells> = listNorrFiles("spells", "spells-*.json")
+private fun load(): Map<String, Spells> = listNorrFiles("data/spells", "spells-*.json")
     .filterNot { it.fileName.name.startsWith("spells-ua-") }
     .associate {
         val data: Map<String, Any> = readJsonAsMap(it)

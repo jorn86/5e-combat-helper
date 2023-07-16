@@ -27,7 +27,7 @@ import org.hertsig.dnd.combat.element.AbilityType.*
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parseOptional
 import org.hertsig.dnd.norr.bestiary.Monster
-import org.hertsig.dnd.norr.bestiary.getFromBestiary
+import org.hertsig.dnd.norr.bestiary.getAllFromBestiary
 import org.hertsig.dnd.norr.bestiary.updateStatBlock
 import org.hertsig.dnd.norr.spell.findNorrSpells
 import org.hertsig.util.display
@@ -69,10 +69,10 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
         val legendaryActionUses = remember { mutableStateOf(original.legendaryActionUses) }
         var unique by remember { mutableStateOf(original.unique) }
 
-        var bestiaryEntry by remember { mutableStateOf<Monster?>(null) }
-        LaunchedEffect(name.value) { bestiaryEntry = getFromBestiary(name.value) }
-        fun loadFromBestiary() {
-            updated = updateStatBlock(bestiaryEntry ?: return, updated)
+        var bestiaryEntries by remember { mutableStateOf<Map<String, Monster>>(mapOf()) }
+        LaunchedEffect(name.value) { bestiaryEntries = getAllFromBestiary(name.value) }
+        fun loadFromBestiary(monster: Monster) {
+            updated = updateStatBlock(monster, updated)
             if (state.statBlocks.update(original, updated)) state.page = Page.Show(updated)
         }
 
@@ -84,7 +84,17 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                     }
                     Checkbox(unique, { unique = it; updated = updated.copy(unique = it)})
                     TextLine("Unique")
-                    SmallButton(::loadFromBestiary, enabled = bestiaryEntry != null) { TextLine("Load") }
+
+                    val showBestiaryDropdown = remember { mutableStateOf(false) }
+                    SmallButton({
+                        if (bestiaryEntries.size == 1) loadFromBestiary(bestiaryEntries.values.single())
+                        else showBestiaryDropdown.value = true
+                    }, enabled = bestiaryEntries.isNotEmpty()) {
+                        TextLine("Load")
+                        DropdownMenu(showBestiaryDropdown, bestiaryEntries.keys,) {
+                            loadFromBestiary(bestiaryEntries.getValue(it))
+                        }
+                    }
                 }
                 FormRow("Size") {
                     BasicDropdown(size, Modifier.weight(1f), onUpdate = { updated = updated.copy(size = it) })
@@ -193,6 +203,7 @@ private inline fun <reified E: Enum<E>> ProficiencyBlock(
     ProficiencyBlock(enumValues<E>().asList(), label, proficiencies, display) { save(it.toEnumSet()) }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun <E: Enum<E>> ProficiencyBlock(
     values: List<E>,
@@ -214,7 +225,10 @@ private fun <E: Enum<E>> ProficiencyBlock(
             }
 
             IconButton({ show = true }, Icons.Default.Add, iconSize = 16.dp)
-            DropdownMenu(showState, missingValues, display) { proficiencies.add(it); save(proficiencies) }
+            DropdownMenu(showState, missingValues, display) {
+                proficiencies.add(it)
+                save(proficiencies)
+            }
         }
     }
 }

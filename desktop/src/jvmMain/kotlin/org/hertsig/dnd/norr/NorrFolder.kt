@@ -10,9 +10,9 @@ import kotlin.io.path.listDirectoryEntries
 
 private val log = logger {}
 
-private val folder = getNorrFolder()
+val norrFolder = loadNorrFolder()
 
-fun getNorrFolder(): Path? {
+private fun loadNorrFolder(): Path? {
     val folder = System.getProperty("norrFolder")
     if (folder == null) {
         log.warn("Norr folder not configured")
@@ -29,7 +29,7 @@ fun getNorrFolder(): Path? {
 }
 
 fun listNorrFiles(subfolder: String, glob: String): List<Path> {
-    val path = folder?.resolve(subfolder) ?: return emptyList()
+    val path = norrFolder?.resolve(subfolder) ?: return emptyList()
     return path.listDirectoryEntries(glob)
 }
 

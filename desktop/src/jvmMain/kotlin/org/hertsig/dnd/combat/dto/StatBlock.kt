@@ -58,4 +58,4 @@ fun StatBlock.genericName(capitalize: Boolean = false) = when {
     else -> "the ${name.lowercase()}"
 }
 
-fun StatBlock.pronoun(capitalize: Boolean) = (if (unique) "Their" else "Its").applyIf(!capitalize) { lowercase() }
+fun StatBlock.pronoun(capitalize: Boolean = false) = (if (unique) "Their" else "Its").applyIf(!capitalize) { lowercase() }

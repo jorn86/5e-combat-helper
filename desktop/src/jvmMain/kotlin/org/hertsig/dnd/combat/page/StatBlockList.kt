@@ -26,7 +26,7 @@ fun StatBlockList(
         Column(Modifier.padding(padding), Arrangement.spacedBy(4.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(hideInvisible, { hideInvisible = !hideInvisible }, colors = CheckboxDefaults.colors(MaterialTheme.colors.primary))
-                TextLine("Hide invisible")
+                TextLine("Hide inactive")
             }
             BasicDropdown(state.statBlocks.orderState, Modifier.weight(1f))
             Button(

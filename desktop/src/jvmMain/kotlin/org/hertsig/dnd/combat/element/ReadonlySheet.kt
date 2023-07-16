@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalLayoutApi::class)
+
 package org.hertsig.dnd.combat.element
 
 import androidx.compose.foundation.*
@@ -37,12 +39,10 @@ import org.hertsig.util.count
 import org.hertsig.util.display
 import org.hertsig.util.plural
 
-private val log = logger {}
-
 @Composable
 fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
-    Column(modifier.padding(8.dp)) {
-        Column {
+    Column(modifier) {
+        Column(Modifier.padding(8.dp)) {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                 RowTextLine(statBlock.name, style = MaterialTheme.typography.h4)
                 RowTextLine("${statBlock.size.display} ${statBlock.type}")
@@ -83,9 +83,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 TraitLine("Damage immunities", statBlock.damageImmunities, singleLine = false)
                 TraitLine("Damage resistances", statBlock.damageResistances, singleLine = false)
                 TraitLine("Speed", statBlock.speed, singleLine = false)
-
                 TraitLine("Senses", statBlock.displaySenses(), singleLine = false)
-
                 TraitLine("Languages", statBlock.languages)
                 FlowRow {
                     val allSkills = statBlock.allSkills
@@ -102,19 +100,15 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
             AbilityBlock("Bonus actions", statBlock, statBlock.bonusActions)
             AbilityBlock("Reactions", statBlock, statBlock.reactions)
             AbilityBlock("Legendary actions", statBlock, statBlock.legendaryActions) {
-                Text(
-                    "${statBlock.genericName(true)} can take ${statBlock.legendaryActionUses} legendary actions, choosing from the options below. " +
-                            "Only one legendary action can be used at a time and only at the end of another creature's turn. " +
-                            "${statBlock.genericName(true)} regains spent legendary actions at the start of ${
-                                statBlock.pronoun(
-                                    false
-                                )
-                            } turn.")
+                Text("${statBlock.genericName(true)} can take ${statBlock.legendaryActionUses} legendary actions, " +
+                        "choosing from the options below. Only one legendary action can be used at a time and only at the end " +
+                        "of another creature's turn. ${statBlock.genericName(true)} regains spent legendary actions " +
+                        "at the start of ${statBlock.pronoun()} turn.")
             }
             AbilityBlock("Lair actions", statBlock, statBlock.lairActions) {
-                Text(
-                    "When fighting inside ${statBlock.pronoun(false)} lair, ${statBlock.genericName()} can take lair actions. On initiative count 20 " +
-                            "(losing initiative ties), ${statBlock.genericName()} can take one lair action to cause one of the following effects:")
+                Text("When fighting inside ${statBlock.pronoun()} lair, ${statBlock.genericName()} can take " +
+                        "lair actions. On initiative count 20 (losing initiative ties), ${statBlock.genericName()} can take one " +
+                        "lair action to cause one of the following effects:")
             }
         }
     }
@@ -168,9 +162,8 @@ fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expan
             }
             is SpellListCasting -> {
                 if (expand) {
-                    Text(
-                        "${statBlock.genericName(true)} is a ${trait.level.display}th-level spellcaster. " +
-                                "${statBlock.pronoun(true)} spellcasting ability is ${trait.list.stat.display} " +
+                    Text("${statBlock.genericName(true)} is a ${trait.level.display}th-level spellcaster. " +
+                        "${statBlock.pronoun(true)} spellcasting ability is ${trait.list.stat.display} " +
                         "(spell save DC ${8 + statBlock.modifierFor(trait.list.stat, true)}). " +
                         "${statBlock.genericName(true)} has the following ${trait.list.display} spells prepared:")
                 }
@@ -335,7 +328,7 @@ fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, 
                         .append(SpanStyle(fontWeight = FontWeight.Bold), name)
                         .build()
                     text(title, Modifier.roll(ability.roll, name, statBlock.name, false), bold)
-                    if (ability.use is Use.Limited) text(" ${ability.use.display}")
+                    if (ability.use is Use.Limited) text(ability.use.display)
                     if (ability.recharge != Recharge.NO) {
                         text(" (Recharge ${ability.recharge.display})",
                             Modifier.roll(MultiDice(1 d 6), statBlock.name, "${ability.name} recharge", false))
