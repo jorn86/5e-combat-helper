@@ -7,10 +7,12 @@ import org.hertsig.dnd.combat.element.toEnumSet
 import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parse
+import org.hertsig.logger.logger
 import org.hertsig.util.sub
 import java.util.*
 import java.util.regex.MatchResult
 
+private val log = logger {}
 private val templateRegex = Regex("\\{@(\\w+) (.+?)}")
 
 fun String.parseNorrTemplateText(replacement: (MatchResult) -> String = { templateValue(it).text }) =
@@ -114,13 +116,20 @@ fun templateValue(match: MatchResult): Template {
         "hit" -> Template.ToHit(text.single().toInt())
         "item" -> Template.Other(type, text.first())
         "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
-        "quickref" -> Template.Other(type, text.first())
+        "quickref" -> when(text.size) {
+            4 -> Template.Other(type, text.last())
+            2 -> Template.Other(type, text.first())
+            else -> {
+                log.debug{"Unknown quickref $text"}
+                Template.Other(type, match.group())
+            }
+        }
         "scaledamage" -> Template.Damage(parse(text.last()).singleUntyped())
         "sense" -> Template.Other(type, text.single())
         "spell" -> Template.Spell(text.single())
         "skill" -> Template.Other(type, text.single()) // make own implementation when needed
         "status" -> Template.Other(type, text.single())
-        else -> Template.Other(type, match.group(0))
+        else -> Template.Other(type, match.group())
     }
 }
 

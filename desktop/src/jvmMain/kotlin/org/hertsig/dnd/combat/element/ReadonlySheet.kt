@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalLayoutApi::class)
-
 package org.hertsig.dnd.combat.element
 
 import androidx.compose.foundation.*
@@ -23,18 +21,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.flowlayout.FlowRow
-import org.hertsig.compose.append
-import org.hertsig.compose.build
 import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
+import org.hertsig.compose.component.richtext.RichText
+import org.hertsig.compose.component.richtext.Tooltip
+import org.hertsig.compose.component.richtext.rememberRichString
 import org.hertsig.dnd.combat.component.displayForEach
 import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.log
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.d
-import org.hertsig.logger.logger
 import org.hertsig.util.count
 import org.hertsig.util.display
 import org.hertsig.util.plural
@@ -182,14 +180,32 @@ fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expan
 private fun SpellBlock(creatureName: String, spells: Map<Int, List<StatblockSpell>>, label: (Int) -> String) {
     spells.forEach { (key, value) ->
         if (value.isNotEmpty()) {
-            FlowRow(mainAxisSpacing = 4.dp) {
-                TextLine(label(key) + ":", style = LocalTextStyle.current.copy(fontStyle = FontStyle.Italic))
+            RichText(rememberRichString(value) {
+                append(label(key), SpanStyle(fontStyle = FontStyle.Italic))
+                append(": ")
+
                 value.forEachIndexed { index, spell ->
                     spell.resolve()?.let {
-                        SpellDisplay(it, index + 1 == value.size, spell.comment, spellClickable(it, creatureName))
+                        @OptIn(ExperimentalFoundationApi::class)
+                        withTooltip(index.toString(), Tooltip { SpellDetail(it) }) {
+                            if (it.damage != null) {
+                                clickableText(spell.name, index.toString()) {
+                                    log(LogEntry.Roll(spell.name, creatureName, it.damage.roll()))
+                                }
+                            } else {
+                                append(spell.name)
+                            }
+                        }
+                        if (spell.comment.isNotBlank()) {
+                            append(" ")
+                            append(spell.comment, SpanStyle(fontStyle = FontStyle.Italic))
+                        }
+                        if (index + 1 != value.size) {
+                            append(", ")
+                        }
                     }
                 }
-            }
+            })
         }
     }
 }
@@ -320,24 +336,27 @@ fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true,
 fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, addToName: String = "") {
     val name = ability.name + addToName + ability.costDisplay()
     if (expand) {
-        Column {
-            val bold = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold)
-            RichText(rememberRichText(ability, addToName) {
-                paragraph {
-                    val title = AnnotatedString.Builder()
-                        .append(SpanStyle(fontWeight = FontWeight.Bold), name)
-                        .build()
-                    text(title, Modifier.roll(ability.roll, name, statBlock.name, false), bold)
-                    if (ability.use is Use.Limited) text(ability.use.display)
-                    if (ability.recharge != Recharge.NO) {
-                        text(" (Recharge ${ability.recharge.display})",
-                            Modifier.roll(MultiDice(1 d 6), statBlock.name, "${ability.name} recharge", false))
-                    }
-                    text(": ")
-                    breakingText(ability.description)
+        RichText(rememberRichString(ability, addToName) {
+            if (ability.roll == null) {
+                append(name, SpanStyle(fontWeight = FontWeight.Bold))
+            } else {
+                clickableText(name, "title", SpanStyle(fontWeight = FontWeight.Bold)) {
+                    log(LogEntry.Roll(name, statBlock.name, ability.roll.roll()))
                 }
-            })
-        }
+            }
+            if (ability.use is Use.Limited) {
+                append(" ")
+                append(ability.use.display)
+            }
+            if (ability.recharge != Recharge.NO) {
+                append(" ")
+                clickableText("(Recharge ${ability.recharge.display})", "recharge") {
+                    log(LogEntry.Roll("${ability.name} recharge", statBlock.name, MultiDice(1 d 6).roll()))
+                }
+            }
+            append(": ")
+            append(ability.description)
+        })
     } else {
         TooltipText(ability.description) {
             FlowRow {

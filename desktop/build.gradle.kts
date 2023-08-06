@@ -48,6 +48,7 @@ compose.desktop {
         mainClass = "org.hertsig.dnd.combat.AppKt"
         jvmArgs += "-DnorrFolder=${System.getProperty("norrFolder")}"
         jvmArgs += "-DbackupFolder=${System.getProperty("backupFolder")}"
+        jvmArgs += "-ea"
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
             packageName = "dnd.combat"

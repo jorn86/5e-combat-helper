@@ -18,6 +18,6 @@ fun Roller(text: String, dice: MultiDice, name: String, rollText: String = text,
 fun Modifier.roll(dice: MultiDice?, name: String, rollText: String, twice: Boolean = true): Modifier {
     if (dice == null) return this
     return clickable {
-        log(LogEntry.Roll(name, rollText, dice.roll(), if (twice) dice.roll() else null))
+        log(LogEntry.Roll(rollText, name, dice.roll(), if (twice) dice.roll() else null))
     }
 }

@@ -25,7 +25,7 @@ fun PrepareCombatPage(state: AppState, modifier: Modifier = Modifier) {
         val focusRequester = remember { FocusRequester() }
 
         fun finish(name: String, roll: MultiDieRolls, entry: CombatEntry) {
-            log(LogEntry.Roll(name, "Initiative", roll))
+            log(LogEntry.Roll("Initiative", name, roll))
             state.combat.addInitiative(entry)
             label = ""
             focusRequester.requestFocus()
