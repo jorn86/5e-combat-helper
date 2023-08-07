@@ -7,6 +7,7 @@ import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.norr.*
 import org.hertsig.dnd.norr.spell.Spellcasting
 import org.hertsig.logger.logger
+import org.hertsig.util.distinctByKeepLast
 import java.util.*
 
 private val log = logger {}
@@ -221,12 +222,12 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
     val attack = templates.singleTypeOrNull<Template.Attack>()
     return if (attack != null) {
         val toHit = templates.firstType<Template.ToHit>()
-        val damages = templates.filterIsInstance<Template.Damage>().map { it.dice }
+        val damages = templates.filterIsInstance<Template.DamageWithType>().map { it.dice }
+            // Take only the last (two-handed) damage value per type. Should keep original order.
+            .distinctByKeepLast { it.type }.toList()
         val stat = analyzeAttackStat(monster, toHit, if (attack.isSpell()) EnumSet.of(Stat.INTELLIGENCE, Stat.WISDOM, Stat.CHARISMA) else EnumSet.of(Stat.STRENGTH, Stat.DEXTERITY))
         val damageModifier = stat?.let { monster.abilityModifier(it) } ?: 0
-        val damageTypes = DAMAGE_TYPE_PAREN.findAll(parsedText).map { it.groupValues[1] }.toList()
-        val typedDamages = damages.zip(damageTypes) { damage, type -> damage(type) }
-        val damage = if (typedDamages.isEmpty()) MultiDice(Dice.NONE) else MultiDice(typedDamages) - damageModifier
+        val damage = if (damages.isEmpty()) MultiDice(Dice.NONE) else MultiDice(damages) - damageModifier
         val reach = if (attack.isMelee()) parseReach(parsedText) else null
         val (range, longRange) = if (attack.isRanged()) parseRange(parsedText) else Pair(null, null)
         val extraHitModifier = if (stat == null) toHit.modifier - monster.proficiencyBonus else 0
@@ -235,9 +236,9 @@ private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty()
     } else {
         val displayText = text.parseNorrTemplateText { it ->
             val value = templateValue(it)
-            if (value is Template.Damage) value.dice.asString(false) else value.text
+            if (value is Template.DamageWithType) value.dice.asString(false) else value.text
         }
-        val damage = templates.filterIsInstance<Template.Damage>().firstOrNull()
+        val damage = templates.filterIsInstance<Template.DamageWithType>().firstOrNull()
         val roll = templates.singleTypeOrNull<Template.Dice>()?.let { MultiDice(it.dice) } ?: damage?.let { MultiDice(it.dice) }
         Ability.Trait(finalName, recharge, displayText, roll, use, legendaryCost)
     }

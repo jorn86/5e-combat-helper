@@ -7,6 +7,7 @@ import java.util.*
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 data class StatBlock(
     val name: String = "",
+    val image: String? = null,
     val size: Size = Size.MEDIUM,
     val type: String = "",
     val challengeRating: ChallengeRating = ChallengeRating(1),

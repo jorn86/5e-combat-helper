@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import org.hertsig.dnd.combat.dto.CasterLevel.*
-import org.hertsig.dnd.combat.dto.SpellList.*
+import org.hertsig.dnd.combat.dto.SpellList.WARLOCK
 import org.hertsig.dnd.norr.spell.getSpell
 import org.hertsig.logger.logger
 

@@ -7,8 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,7 +34,7 @@ fun RowScope.RollResult(
     suffix: String = ""
 ) {
     TooltipArea({
-        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body1) {
+        ProvideTextStyle(MaterialTheme.typography.body1) {
             Row(Modifier.background(MaterialTheme.colors.background)) {
                 roll.rolls.forEach {
                     Column {

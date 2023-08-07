@@ -48,7 +48,7 @@ private class SpellParser(private val spell: NorrSpell) {
     private fun parseText(): Pair<List<SpellText>, List<MultiDice>> {
         spell.entries().forEach(::parseSpellEntry)
         if (spell.entriesHigherLevel().isNotEmpty()) {
-            text.add(SpellText.Text("\nAt higher levels:"))
+            text.add(SpellText.Text(HIGHER_LEVELS))
             spell.entriesHigherLevel().forEach(::parseSpellEntry)
         }
         return Pair(text, emptyList())
@@ -73,8 +73,7 @@ private class SpellParser(private val spell: NorrSpell) {
 
     private fun parseSpellText(rawText: String): List<SpellText> {
         val (text, templates) = rawText.parseNorrTemplate()
-        val damages = templates.filterIsInstance<Template.DamgeWithType>().map { MultiDice(it.dice) }
-        rolls.addAll(damages)
+        rolls.addAll(templates.filterIsInstance<Template.DamageWithType>().map { MultiDice(it.dice) })
         return listOf(SpellText.Text(text))
     }
 
@@ -89,3 +88,5 @@ private class SpellParser(private val spell: NorrSpell) {
     private fun parseTime(time: List<Time>) = time.joinToString("; ") { it.display() }
     private fun parseDuration(duration: List<Duration>) = duration.joinToString("; ") { it.display() }
 }
+
+const val HIGHER_LEVELS = "\nAt higher levels:"

@@ -35,8 +35,9 @@ fun String.parseNorrTemplate(): Pair<String, MutableList<Template>> {
     val text = parseNorrTemplateText { it, _, matchEnd ->
         val template = templateValue(it)
         if (template is Template.Damage) {
-            val type = this.sub(start = matchEnd + 1).substringBefore(' ', "")
-            templates.add(Template.DamgeWithType(template.dice(type)))
+            val nextSpace = this.indexOf(' ', matchEnd)
+            val type = if (nextSpace < 0) "" else this.sub(start = nextSpace + 1).substringBefore(' ', "")
+            templates.add(Template.DamageWithType(template.dice(type)))
             template.dice.asString(withType = false)
         } else {
             templates.add(template)
@@ -72,10 +73,10 @@ sealed interface Template {
     }
 
     data class Damage(val dice: org.hertsig.dnd.dice.Dice): Template {
-        override val text get() = DAMAGE_MARKER
+        override val text get() = dice.asString()
     }
 
-    data class DamgeWithType(val dice: org.hertsig.dnd.dice.Dice): Template {
+    data class DamageWithType(val dice: org.hertsig.dnd.dice.Dice): Template {
         override val text get() = dice.asString()
     }
 
@@ -138,6 +139,3 @@ private fun MultiDice.singleUntyped(): Dice {
     require(main.type.isEmpty())
     return main
 }
-
-const val DAMAGE_MARKER = "<DMG>"
-internal val DAMAGE_TYPE_PAREN = Regex("\\($DAMAGE_MARKER\\) (\\w+)")

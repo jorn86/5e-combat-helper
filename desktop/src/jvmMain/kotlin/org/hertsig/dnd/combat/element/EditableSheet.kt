@@ -1,16 +1,19 @@
 package org.hertsig.dnd.combat.element
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Checkbox
 import androidx.compose.material.Icon
-import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,6 +44,7 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
 
     SpacedColumn(modifier.padding(8.dp)) {
         val name = remember { mutableStateOf(original.name) }
+        val image = remember { mutableStateOf(original.image.orEmpty()) }
         val size = remember { mutableStateOf(original.size) }
         val type = remember { mutableStateOf(original.type) }
         val challengeRating = remember { mutableStateOf(original.challengeRating) }
@@ -96,6 +100,11 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                         }
                     }
                 }
+                FormRow("Image") {
+                    BasicEditText(image, Modifier.weight(1f)) {
+                        updated = updated.copy(image = it.takeIf { it.isNotBlank() })
+                    }
+                }
                 FormRow("Size") {
                     BasicDropdown(size, Modifier.weight(1f), onUpdate = { updated = updated.copy(size = it) })
                 }
@@ -113,7 +122,7 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                     BasicEditNumber(proficiencyBonus, 2, 9) { updated = updated.copy(proficiencyBonus = it) }
                 }
                 FormRow("Abilities") {
-                    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+                    ProvideTextStyle(MaterialTheme.typography.body2) {
                         SpacedColumn(spacing = 2.dp) {
                             @Composable
                             fun EditAbilityScore(stat: Stat) {
@@ -158,17 +167,6 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                 FormRow("Languages") {
                     BasicEditText(languages, Modifier.weight(1f)) { updated = updated.copy(languages = it) }
                 }
-//                FormRow("Spellcasting") {
-//                    BasicDropdown(casterLevel, Modifier.width(30.dp), onUpdate = {
-//                        updated = updated.copy(spellSlots = it,
-//                            casterAbility = if (it == CasterLevel.NONE) null else casterAbility.value)
-//                    }) { it.display }
-//                    if (casterLevel.value != CasterLevel.NONE) {
-//                        BasicDropdown(casterAbility, Modifier.width(100.dp), onUpdate = {
-//                            updated = updated.copy(casterAbility = it)
-//                        })
-//                    }
-//                }
                 if (abilityState.legendaryActions.isNotEmpty()) {
                     FormRow("Legendary actions") {
                         BasicEditNumber(legendaryActionUses, max = 5) {
@@ -203,7 +201,6 @@ private inline fun <reified E: Enum<E>> ProficiencyBlock(
     ProficiencyBlock(enumValues<E>().asList(), label, proficiencies, display) { save(it.toEnumSet()) }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun <E: Enum<E>> ProficiencyBlock(
     values: List<E>,
@@ -216,20 +213,29 @@ private fun <E: Enum<E>> ProficiencyBlock(
     val showState = remember { mutableStateOf(false) }
     var show by showState
     FormRow(label) {
-        FlowRow {
-            proficiencies.forEach {
-                Row(Modifier.padding(horizontal = 2.dp), Arrangement.spacedBy(2.dp)) {
-                    RowTextLine(display(it))
-                    IconButton({ proficiencies.remove(it); save(proficiencies) }, Icons.Default.Close, iconSize = 16.dp)
+        FlowRow(mainAxisSpacing = 4.dp) {
+            ProvideTextStyle(MaterialTheme.typography.body2) {
+                proficiencies.forEach {
+                    ProficiencyEntry(display(it)) { proficiencies.remove(it); save(proficiencies) }
                 }
             }
-
-            IconButton({ show = true }, Icons.Default.Add, iconSize = 16.dp)
+            IconButton({ show = true }, Icons.Default.Add, iconSize = 12.dp)
             DropdownMenu(showState, missingValues, display) {
                 proficiencies.add(it)
                 save(proficiencies)
             }
         }
+    }
+}
+
+@Composable
+private fun ProficiencyEntry(text: String, action: () -> Unit) {
+    Row(Modifier.background(Color.LightGray.copy(alpha = .2f), CircleShape).padding(horizontal = 4.dp),
+        Arrangement.spacedBy(2.dp),
+        Alignment.CenterVertically
+    ) {
+        RowTextLine(text)
+        IconButton(action, Icons.Default.Close, iconSize = 14.dp)
     }
 }
 
@@ -259,7 +265,7 @@ private fun SpellcastingBlock(traits: MutableList<SpellcastingTrait>, updatedSta
             SpacedColumn {
                 when (it) {
                     is InnateSpellcasting -> EditInnateSpellcasting(traits, it, index, updatedState)
-                    is SpellListCasting -> { EditSpellListCasting(traits, it, index, updatedState) }
+                    is SpellListCasting -> EditSpellListCasting(traits, it, index, updatedState)
                 }
             }
         }
@@ -364,7 +370,7 @@ private fun EditSpell(
     spell: StatblockSpell,
     update: (List<StatblockSpell>) -> Unit,
 ) {
-    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+    ProvideTextStyle(MaterialTheme.typography.body2) {
         SpacedRow {
             val comment = remember(spell) { mutableStateOf(spell.comment) }
             SpellDisplay(spell.resolve()!!, tooltipModifier = Modifier.weight(1f))
@@ -386,7 +392,7 @@ private fun AbilityBlock(
         TextLine(type.display, style = MaterialTheme.typography.h6)
         HorizontalDivider()
         SpacedColumn(Modifier.padding(vertical = 4.dp)) {
-            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+            ProvideTextStyle(MaterialTheme.typography.body2) {
                 abilities.forEachIndexed { index, _ -> EditSingleAbility(type, index, state, updatedState) }
             }
 

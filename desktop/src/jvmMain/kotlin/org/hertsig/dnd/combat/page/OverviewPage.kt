@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Checkbox
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,14 +24,11 @@ import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.element.*
 import org.hertsig.dnd.dice.MultiDice
-import org.hertsig.logger.logger
 import org.hertsig.util.display
-
-private val log = logger {}
 
 @Composable
 fun OverviewPage(statBlocks: List<StatBlock>, modifier: Modifier, active: StatBlock? = null) {
-    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+    ProvideTextStyle(MaterialTheme.typography.body2) {
         Column(modifier.padding(8.dp)) {
             val columns = remember { mutableStateOf((statBlocks.size / 3).coerceIn(2, 4)) }
             var expand by remember { mutableStateOf(true) }

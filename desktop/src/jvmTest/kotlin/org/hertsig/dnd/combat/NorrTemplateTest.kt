@@ -17,13 +17,13 @@ class NorrTemplateTest {
     fun parseDamage() {
         val (text, templates) = "deals {@damage 4d8} cold damage".parseNorrTemplate()
         assertEquals("deals 4d8 cold damage", text)
-        assertEquals(Template.DamgeWithType((4 d 8)("cold")), templates.single())
+        assertEquals(Template.DamageWithType((4 d 8)("cold")), templates.single())
     }
 
     @Test
     fun parseUntypedDamage() {
         val (text, templates) = "{@damage 4d8}.".parseNorrTemplate()
         assertEquals("4d8.", text)
-        assertEquals(Template.DamgeWithType((4 d 8)("")), templates.single())
+        assertEquals(Template.DamageWithType((4 d 8)("")), templates.single())
     }
 }

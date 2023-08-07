@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -45,7 +45,7 @@ fun Log(logEntries: List<LogEntry>) {
 @Composable
 private fun RollEntry(roll: LogEntry.Roll) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h4) {
+        ProvideTextStyle(MaterialTheme.typography.h4) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
                 RollResult(roll.first, Modifier.sizeIn(minWidth = 70.dp))
                 roll.second?.let {
@@ -62,7 +62,7 @@ private fun RollEntry(roll: LogEntry.Roll) {
 @Composable
 private fun AttackEntry(attack: LogEntry.Attack) {
     Column(Modifier.fillMaxWidth(), Arrangement.spacedBy(2.dp), Alignment.CenterHorizontally) {
-        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h4) {
+        ProvideTextStyle(MaterialTheme.typography.h4) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
                 RollResult(attack.firstHit, Modifier.sizeIn(minWidth = 70.dp))
                 attack.secondHit?.let {

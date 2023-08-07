@@ -18,18 +18,18 @@ class DiceSerializationTest {
 
     @Test
     fun asString() {
-        assertEquals("1d20 (10)", (1 d 20).asString(true))
-        assertEquals("1d20 + 4 (14)", ((1 d 20) + 4).asString(true))
-        assertEquals("1d20 - 1 (9)", ((1 d 20) - 1).asString(true))
+        assertEquals("1d20 (10)", Dice.D20.asString(true))
+        assertEquals("1d20 + 4 (14)", (Dice.D20 + 4).asString(true))
+        assertEquals("1d20 - 1 (9)", (Dice.D20 - 1).asString(true))
         assertEquals("1d6 (3) poison", ((1 d 6)("poison")).asString(true))
         assertEquals("1d6 + 2d8 + 4 (16) bludgeoning", ((1 d 6) + (2 d 8) + 4)("bludgeoning").asString(true))
     }
 
     @Test
     fun asStringWithoutAverage() {
-        assertEquals("1d20", (1 d 20).asString(false))
-        assertEquals("1d20 + 12", ((1 d 20) + 12).asString(false))
-        assertEquals("1d20 - 1", ((1 d 20) - 1).asString(false))
+        assertEquals("1d20", Dice.D20.asString(false))
+        assertEquals("1d20 + 12", (Dice.D20 + 12).asString(false))
+        assertEquals("1d20 - 1", (Dice.D20 - 1).asString(false))
         assertEquals("1d6 poison", ((1 d 6)("poison")).asString(false))
         assertEquals("1d6 + 2d8 + 4 bludgeoning", ((1 d 6) + (2 d 8) + 4)("bludgeoning").asString(false))
     }

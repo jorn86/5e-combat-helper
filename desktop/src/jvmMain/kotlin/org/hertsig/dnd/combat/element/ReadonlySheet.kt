@@ -247,10 +247,11 @@ private inline fun AnnotatedString.Builder.appendIf(condition: Boolean, text: ()
 }
 
 @Composable
-private fun SpellDetail(spell: Spell, maxWidth: Dp = 600.dp) {
+fun SpellDetail(spell: Spell, maxWidth: Dp = 600.dp) {
     Column(tooltipModifier(Color(0xfffafad0)).widthIn(max = maxWidth), Arrangement.spacedBy(4.dp)) {
         TextLine(spell.name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
         TextLine("${spell.school.display} ${spell.type}")
+        Text("Components: ${spell.components}")
         TextLine("${spell.time}, range ${spell.range}, duration ${spell.duration}")
         Text(spell.text.filterIsInstance<SpellText.Text>().joinToString("\n") { it.text })
     }

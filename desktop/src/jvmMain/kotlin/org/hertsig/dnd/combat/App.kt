@@ -2,7 +2,6 @@ package org.hertsig.dnd.combat
 
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.LocalMinimumInteractiveComponentEnforcement
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateListOf
@@ -13,6 +12,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import org.hertsig.compose.component.Theme
 import org.hertsig.compose.registerExceptionHandler
 import org.hertsig.dnd.combat.dto.rememberAppState
 
@@ -33,7 +33,7 @@ fun main() {
             height = 1000.dp,
         ), title = "Combat helper") {
             CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                MaterialTheme(colors) {
+                Theme(colors) {
                     CombatHelper(state)
                 }
             }

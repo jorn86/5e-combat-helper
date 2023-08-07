@@ -47,31 +47,39 @@ class StatblockFrom5eToolsTest {
     }
 
     @Test
+    fun testVersatileWeaponAttack() {
+        val actual = updateStatBlock(getFromBestiary("Tribal Warrior")!!)
+        assertAbilities(actual.actions,
+            Ability.Attack("Spear", Stat.STRENGTH, reach = 5, range = 20, longRange = 60, damage = MultiDice((1 d 8)("piercing")))
+        )
+    }
+
+    @Test
     fun testBonusActionOldStyle() {
         val actual = updateStatBlock(getFromBestiary("Cranium rat", "vgm")!!)
-        assertEquals(listOf(
+        assertAbilities(actual.traits,
             Ability.Trait("Telepathic Shroud", description = "The cranium rat is immune to any effect that would sense its emotions or read its thoughts, as well as to all divination spells.")
-        ), actual.traits)
-        assertEquals(listOf(
+        )
+        assertAbilities(actual.actions,
             Ability.Attack("Bite", Stat.DEXTERITY, reach = 5, damage = MultiDice(Dice.NONE)), // can't parse type if damage isn't linked
-        ), actual.actions)
-        assertEquals(listOf(
+        )
+        assertAbilities(actual.bonusActions,
             Ability.Trait("Illumination", description = "As a bonus action, the cranium rat can shed dim light from its brain in a 5-foot radius or extinguish the light."),
-        ), actual.bonusActions)
+        )
     }
 
     @Test
     fun testBonusAction() {
         val actual = updateStatBlock(getFromBestiary("Cranium rat", "mpmm")!!)
-        assertEquals(listOf(
+        assertAbilities(actual.traits,
             Ability.Trait("Telepathic Shroud", description = "The cranium rat is immune to any effect that would sense its emotions or read its thoughts, as well as to all divination spells.")
-        ), actual.traits)
-        assertEquals(listOf(
+        )
+        assertAbilities(actual.actions,
             Ability.Attack("Bite", Stat.DEXTERITY, reach = 5, damage = MultiDice(Dice.NONE)), // can't parse type if damage isn't linked
-        ), actual.actions)
-        assertEquals(listOf(
+        )
+        assertAbilities(actual.bonusActions,
             Ability.Trait("Illumination", description = "The cranium rat sheds dim light from its exposed brain in a 5-foot radius or extinguishes the light."),
-        ), actual.bonusActions)
+        )
     }
 
     @Test
@@ -90,29 +98,32 @@ class StatblockFrom5eToolsTest {
     @Test
     fun testRecharge() {
         val actual = updateStatBlock(getFromBestiary("Air Elemental")!!)
-        assertEquals(listOf(
+        assertAbilities(actual.actions,
             Ability.Trait("Multiattack", description = "The elemental makes two slam attacks."),
             Ability.Attack("Slam", Stat.DEXTERITY, 0, 5, damage = MultiDice((2 d 8)("bludgeoning"))),
             Ability.Trait("Whirlwind", Recharge.FOUR, "Each creature in the elemental's space must make a DC 13 Strength saving throw. On a failure, a target takes 15 (3d8 + 2) bludgeoning damage and is flung up 20 feet away from the elemental in a random direction and knocked prone. If a thrown target strikes an object, such as a wall or floor, the target takes 3 (1d6) bludgeoning damage for every 10 feet it was thrown. If the target is thrown at another creature, that creature must succeed on a DC 13 Dexterity saving throw or take the same damage and be knocked prone. If the saving throw is successful, the target takes half the bludgeoning damage and isn't flung away or knocked prone.",
-                MultiDice((3 d 8) + 2)),
-        ), actual.actions)
+                MultiDice(((3 d 8) + 2)("bludgeoning"))),
+        )
     }
 
     @Test
     fun testLegendary() {
         val actual = updateStatBlock(getFromBestiary("Adult White Dragon")!!)
         assertEquals(3, actual.legendaryActionUses)
-        assertEquals(listOf(
+        assertAbilities(listOf(actual.actions[1], actual.actions[5]),
+            Ability.Attack("Bite", Stat.STRENGTH, 0, 10, damage = MultiDice((2 d 10)("piercing"), (1 d 8)("cold"))),
+            Ability.Trait("Cold Breath", Recharge.FIVE, roll = MultiDice((12 d 8)("cold")), description = "The dragon exhales an icy blast in a 60-foot cone. Each creature in that area must make a DC 19 Constitution saving throw, taking 54 (12d8) cold damage on a failed save, or half as much damage on a successful one.")
+        )
+        assertAbilities(actual.traits,
             Ability.Trait("Ice Walk", description = "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, difficult terrain composed of ice or snow doesn't cost it extra movement."),
             Ability.Trait("Legendary Resistance", use = Use.Limited(3, "day"), description = "If the dragon fails a saving throw, it can choose to succeed instead."),
-        ), actual.traits)
-        assertEquals(Ability.Attack("Bite", Stat.STRENGTH, 0, 10, damage = MultiDice((2 d 10)("piercing"), (1 d 8)("cold"))), actual.actions[1])
-        assertEquals(listOf(
+        )
+        assertAbilities(actual.legendaryActions,
             Ability.Trait("Detect", description = "The dragon makes a Wisdom (Perception) check.", legendaryCost = 1),
             Ability.Trait("Tail Attack", description = "The dragon makes a tail attack.", legendaryCost = 1),
             Ability.Trait("Wing Attack", description = "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed.",
-                roll = MultiDice((2 d 6) + 6), legendaryCost = 2),
-        ), actual.legendaryActions)
+                roll = MultiDice(((2 d 6) + 6)("bludgeoning")), legendaryCost = 2),
+        )
     }
 
     @Test
@@ -120,7 +131,7 @@ class StatblockFrom5eToolsTest {
         val actual = updateStatBlock(getFromBestiary("Mage")!!)
         val trait = actual.spellcasting.singleType<SpellListCasting>()
         assertEquals("Spellcasting", trait.name)
-        assertEquals(Stat.INTELLIGENCE, trait.stat)
+        assertEquals(SpellList.WIZARD, trait.list)
         assertEquals(CasterLevel.NINE, trait.level)
         assertEquals(listOf("fire bolt", "light", "mage hand", "prestidigitation"),
             trait.spellsByLevel[0]?.map { it.name })
@@ -162,7 +173,7 @@ class StatblockFrom5eToolsTest {
 
         val listTrait = actual.spellcasting.singleType<SpellListCasting>()
         assertEquals("Spellcasting", listTrait.name)
-        assertEquals(Stat.CHARISMA, listTrait.stat)
+        assertEquals(SpellList.WARLOCK, listTrait.list)
         assertEquals(CasterLevel.WARLOCK_17, listTrait.level)
         // CBA to type out 17 spells
         assertEquals(7, listTrait.spellsByLevel[0]?.size)
@@ -173,13 +184,13 @@ class StatblockFrom5eToolsTest {
     @Test
     fun testInnateSpellcasting() {
         val actual = updateStatBlock(getFromBestiary("Dragon Speaker")!!)
-        assertEquals(listOf(
+        assertAbilities(actual.actions,
             Ability.Trait("Multiattack", description = "The speaker makes two Thunder Bolt attacks."),
             Ability.Attack("Thunder Bolt", Stat.CHARISMA, reach = 5, range = 60, damage = MultiDice(((3 d 8) - 3)("thunder")))
-        ), actual.actions)
-        assertEquals(listOf(
+        )
+        assertAbilities(actual.reactions,
             Ability.Trait("Disarming Words", Recharge.NO, "When a creature the speaker can see within 60 feet of it makes a damage roll, the speaker can roll a d6 and subtract the number rolled from that damage roll.", MultiDice(1 d 6), Use.Limited(3, "day")),
-        ), actual.reactions)
+        )
         val trait = actual.spellcasting.singleType<InnateSpellcasting>()
         assertEquals(Stat.CHARISMA, trait.stat)
         assertEquals(listOf("dancing lights"), trait.spellsWithLimit[0]?.map { it.name })
@@ -193,6 +204,13 @@ class StatblockFrom5eToolsTest {
             it.forEach { spell ->
                 assertNotNull(spell.resolve(), "Was ${spell.name}")
             }
+        }
+    }
+
+    private fun assertAbilities(actual: List<Ability>, vararg expected: Ability) {
+        assertEquals(expected.size, actual.size, "ability count")
+        actual.forEachIndexed { index, it ->
+            assertEquals(expected[index], it, "Ability $index")
         }
     }
 }

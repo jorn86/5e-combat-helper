@@ -7,7 +7,7 @@ interface Components {
         return listOfNotNull(
             if (verbal() == true) "v" else null,
             if (somatic() == true) "s" else null,
-            material()?.let { "m" }
+            material()?.let { if (it.cost() != null) "m (${it.text()})" else "m" }
         ).joinToString("")
     }
 

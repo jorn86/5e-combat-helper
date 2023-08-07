@@ -4,6 +4,7 @@ import org.hertsig.dnd.combat.dto.SpellSchool
 import org.hertsig.dnd.combat.dto.SpellText
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.d
+import org.hertsig.dnd.norr.spell.HIGHER_LEVELS
 import org.hertsig.dnd.norr.spell.getSpell
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -13,7 +14,6 @@ class SpellFrom5eToolsTest {
     @Test
     fun testMending() {
         val spell = getSpell("Mending")!!
-        println(spell)
         assertEquals("Mending", spell.name)
         assertEquals(0, spell.level)
         assertEquals(SpellSchool.TRANSMUTATION, spell.school)
@@ -38,9 +38,9 @@ class SpellFrom5eToolsTest {
         assertEquals(SpellSchool.EVOCATION, spell.school)
         assertEquals(listOf(
             SpellText.Text("Lightning springs from your hand to deliver a shock to a creature you try to touch. Make a melee spell attack against the target. You have advantage on the attack roll if the target is wearing armor made of metal. On a hit, the target takes 1d8 lightning damage, and it can't take reactions until the start of its next turn."),
-            SpellText.Text("The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."),
+            SpellText.Text("The spell's damage increases by d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."),
         ), spell.text)
-        assertEquals("1 action", spell.time)
+        assertEquals("Action", spell.time)
         assertEquals("instantaneous", spell.duration)
         assertEquals("vs", spell.components)
         assertEquals("touch", spell.range)
@@ -55,11 +55,11 @@ class SpellFrom5eToolsTest {
         assertEquals(3, spell.level)
         assertEquals(SpellSchool.EVOCATION, spell.school)
         assertEquals(listOf(
-            SpellText.Text("The next time you hit a creature with a melee weapon attack during this spell's duration, your weapon flares with bright light, and the attack deals an extra {@damage 3d8} radiant damage to the target. Additionally, the target must succeed on a Constitution saving throw or be {@condition blinded} until the spell ends."),
-            SpellText.Text("A creature {@condition blinded} by this spell makes another Constitution saving throw at the end of each of its turns. On a successful save, it is no longer {@condition blinded}.)"),
+            SpellText.Text("The next time you hit a creature with a melee weapon attack during this spell's duration, your weapon flares with bright light, and the attack deals an extra 3d8 radiant damage to the target. Additionally, the target must succeed on a Constitution saving throw or be blinded until the spell ends."),
+            SpellText.Text("A creature blinded by this spell makes another Constitution saving throw at the end of each of its turns. On a successful save, it is no longer blinded."),
         ), spell.text)
         assertEquals("Blinding Smite", spell.name)
-        assertEquals("1 bonus action", spell.time)
+        assertEquals("Bonus action", spell.time)
         assertEquals("1 minute (concentration)", spell.duration)
         assertEquals("v", spell.components)
         assertEquals("self", spell.range)
@@ -75,12 +75,12 @@ class SpellFrom5eToolsTest {
         assertEquals(3, spell.level)
         assertEquals(SpellSchool.EVOCATION, spell.school)
         assertEquals(listOf(
-            SpellText.Text("A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a Dexterity saving throw. A target takes "),
-            SpellText.Roll(damage),
-            SpellText.Text(" on a failed save, or half as much damage on a successful one."),
+            SpellText.Text("A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a Dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one."),
             SpellText.Text("The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried."),
+            SpellText.Text(HIGHER_LEVELS),
+            SpellText.Text("When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."),
         ), spell.text)
-        assertEquals("1 action", spell.time)
+        assertEquals("Action", spell.time)
         assertEquals("instantaneous", spell.duration)
         assertEquals("vsm", spell.components)
         assertEquals("150 ft.", spell.range)
@@ -95,11 +95,13 @@ class SpellFrom5eToolsTest {
         assertEquals(SpellSchool.ENCHANTMENT, spell.school)
         assertEquals(listOf(
             SpellText.Text("This spell assaults and twists creatures' minds, spawning delusions and provoking uncontrolled action. Each creature in a 10-foot-radius sphere centered on a point you choose within range must succeed on a Wisdom saving throw when you cast this spell or be affected by it."),
-            SpellText.Text("An affected target can't take reactions and must roll a {@dice d10} at the start of each of its turns to determine its behavior for that turn."),
-            // table
+            SpellText.Text("An affected target can't take reactions and must roll a d10 at the start of each of its turns to determine its behavior for that turn."),
+            SpellText.Text("(Confusion Behavior table omitted)"),
             SpellText.Text("At the end of each of its turns, an affected target can make a Wisdom saving throw. If it succeeds, this effect ends for that target."),
+            SpellText.Text(HIGHER_LEVELS),
+            SpellText.Text("When you cast this spell using a spell slot of 5th level or higher, the radius of the sphere increases by 5 feet for each slot level above 4th."),
         ), spell.text)
-        assertEquals("1 action", spell.time)
+        assertEquals("Action", spell.time)
         assertEquals("1 minute (concentration)", spell.duration)
         assertEquals("vsm", spell.components)
         assertEquals("90 ft.", spell.range)
@@ -117,8 +119,10 @@ class SpellFrom5eToolsTest {
         assertEquals(listOf(
             SpellText.Text("A blast of cold air erupts from your hands. Each creature in a 60-foot cone must make a Constitution saving throw. A creature takes 8d8 cold damage on a failed save, or half as much damage on a successful one."),
             SpellText.Text("A creature killed by this spell becomes a frozen statue until it thaws."),
+            SpellText.Text(HIGHER_LEVELS),
+            SpellText.Text("When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th."),
         ), spell.text)
-        assertEquals("1 action", spell.time)
+        assertEquals("Action", spell.time)
         assertEquals("instantaneous", spell.duration)
         assertEquals("vsm", spell.components)
         assertEquals("60 ft. cone", spell.range)

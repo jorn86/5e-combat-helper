@@ -11,11 +11,14 @@ import org.hertsig.dnd.norr.norrFolder
 import org.hertsig.logger.logger
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.*
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.absolute
+import kotlin.io.path.inputStream
+import kotlin.io.path.walk
 
 private val log = logger {}
 
-suspend fun StatBlock.image(): ImageBitmap? = imageFor(name)
+suspend fun StatBlock.image(): ImageBitmap? = imageFor(image ?: name) ?: imageFor(name)
 suspend fun imageFor(creatureName: String): ImageBitmap? = withContext(Dispatchers.IO) {
     imageCache[creatureName].orElse(null)
 }
