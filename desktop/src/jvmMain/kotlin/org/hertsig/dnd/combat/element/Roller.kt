@@ -1,7 +1,7 @@
 package org.hertsig.dnd.combat.element
 
 import androidx.compose.foundation.clickable
-import androidx.compose.material.LocalTextStyle
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle

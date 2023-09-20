@@ -11,6 +11,7 @@ import org.hertsig.dnd.norr.Template
 import org.hertsig.dnd.norr.parseNorrTemplate
 import org.hertsig.logger.logger
 import org.hertsig.magic.DynamicEntry
+import org.hertsig.magic.getAll
 
 private val log = logger {}
 
@@ -68,7 +69,7 @@ private class SpellParser(private val spell: NorrSpell) {
     }
 
     private fun parseEntry(entry: Entry): List<SpellText> {
-        return entry.entries().flatMap(::parseSpellText)
+        return entry.entries().getAll<String>().flatMap(::parseSpellText)
     }
 
     private fun parseSpellText(rawText: String): List<SpellText> {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import org.hertsig.dnd.combat.dto.CasterLevel.*
 import org.hertsig.dnd.combat.dto.SpellList.WARLOCK
+import org.hertsig.dnd.combat.element.cap
 import org.hertsig.dnd.norr.spell.getSpell
 import org.hertsig.logger.logger
 
@@ -66,13 +67,24 @@ data class SpellListCasting(
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 data class StatblockSpell(val name: String, val comment: String = "") {
-    fun resolve(): Spell? {
+    val resolved by lazy {
         log.trace("Resolving spell $name")
-        return getSpell(name)
+        getSpell(name)
+    }
+
+    val displayName by lazy {
+        name.lowercase()
+            .split(" ")
+            .joinToString(" ") { if (it in NON_CAPITALIZED_WORDS) it else it.cap() }
+            .cap()
+    }
+
+    companion object {
+        private val NON_CAPITALIZED_WORDS = setOf("and", "from", "of", "or", "the", "via", "with")
     }
 }
 
-fun List<StatblockSpell>.resolve() = mapNotNull(StatblockSpell::resolve)
+fun List<StatblockSpell>.resolve() = mapNotNull { it.resolved }
 fun List<Spell>.groupByLevel() = associateBy { it.level }
 fun List<SpellcastingTrait>.resolveAll(): Set<Spell> = flatMap { when (it) {
     is InnateSpellcasting -> it.spellsWithLimit.values

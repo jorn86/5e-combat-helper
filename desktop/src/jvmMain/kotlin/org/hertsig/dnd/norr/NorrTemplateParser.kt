@@ -80,8 +80,8 @@ sealed interface Template {
         override val text get() = dice.asString()
     }
 
-    data class Dice(val dice: org.hertsig.dnd.dice.Dice): Template {
-        override val text get() = dice.asString(short = true)
+    data class Dice(val dice: org.hertsig.dnd.dice.Dice, val short: Boolean = true): Template {
+        override val text get() = dice.asString(short = short)
     }
 
     data class ToHit(val modifier: Int): Template {
@@ -109,7 +109,9 @@ fun templateValue(match: MatchResult): Template {
     return when(val type = match.group(1)) {
         "atk" -> Template.Attack(text.single().split(",").map(Template.Attack.Type::forText).toEnumSet())
         "book" -> Template.Other(type, text.first())
+        "chance" -> Template.Other(type, text[1])
         "condition" -> Template.Other(type, text.single())
+        "creature" -> Template.Other(type, text.last()) // TODO own implementation for linking?
         "damage" -> Template.Damage(parse(text.single()).singleUntyped())
         "dc" -> Template.DC(text.single().toInt())
         "dice" -> Template.Dice(parse(text.single()).singleUntyped())
@@ -126,6 +128,7 @@ fun templateValue(match: MatchResult): Template {
             }
         }
         "scaledamage" -> Template.Damage(parse(text.last()).singleUntyped())
+        "scaledice" -> Template.Dice(parse(text.last()).singleUntyped(), false)
         "sense" -> Template.Other(type, text.single())
         "spell" -> Template.Spell(text.single())
         "skill" -> Template.Other(type, text.single()) // make own implementation when needed

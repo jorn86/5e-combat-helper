@@ -2,9 +2,9 @@ package org.hertsig.dnd.combat.page
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,13 +23,13 @@ fun EncounterList(state: AppState, modifier: Modifier) {
         Button(
             { Encounter().let { encounters.add(it); active = it } },
             Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondaryVariant)
+            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.tertiary)
         ) {
-            RowTextLine("Add...", style = MaterialTheme.typography.subtitle1)
+            RowTextLine("Add...", style = MaterialTheme.typography.titleMedium)
         }
         ScrollableColumn(Modifier.weight(1f), Arrangement.spacedBy(4.dp), PaddingValues(0.dp)) {
             items(encounters.encounters) {
-                val colors = MaterialTheme.colors
+                val colors = MaterialTheme.colorScheme
                 val isCurrent by remember { derivedStateOf { it == active } }
                 val backgroundColor by remember { derivedStateOf { if (isCurrent) colors.primary else colors.secondary } }
                 Button(
@@ -37,7 +37,7 @@ fun EncounterList(state: AppState, modifier: Modifier) {
                     Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(backgroundColor),
                 ) {
-                    RowTextLine(it.name, style = MaterialTheme.typography.subtitle1)
+                    RowTextLine(it.name, style = MaterialTheme.typography.titleMedium)
                 }
             }
         }

@@ -3,9 +3,9 @@ package org.hertsig.dnd.combat.element
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,12 +14,14 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.rememberCursorPositionProvider
 import com.google.accompanist.flowlayout.FlowRow
 import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ReorderStrategy
@@ -42,7 +44,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
     Column(modifier) {
         Column(Modifier.padding(8.dp)) {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                RowTextLine(statBlock.name, style = MaterialTheme.typography.h4)
+                RowTextLine(statBlock.name, style = MaterialTheme.typography.headlineMedium)
                 RowTextLine("${statBlock.size.display} ${statBlock.type}")
             }
             Row {
@@ -115,7 +117,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
 @Composable
 private fun AbilityScore(ability: String, statBlock: StatBlock, stat: Stat) {
     Column(
-        Modifier.width(120.dp).border(4.dp, MaterialTheme.colors.primary, RoundedCornerShape(24.dp)).padding(12.dp),
+        Modifier.width(120.dp).border(4.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp)).padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TextLine(ability)
@@ -124,7 +126,7 @@ private fun AbilityScore(ability: String, statBlock: StatBlock, stat: Stat) {
         val modifierText = modifier(modifier)
         Roller(
             statBlock.scores[stat].toString(), MultiDice.D20 + modifier, statBlock.name,
-            "${stat.display} ($modifierText)", MaterialTheme.typography.h3
+            "${stat.display} ($modifierText)", MaterialTheme.typography.displaySmall
         )
 
         val saveModifier = statBlock.saveModifierFor(stat)
@@ -156,7 +158,10 @@ fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expan
                         "(spell save DC ${8 + statBlock.modifierFor(trait.stat, true)}). " +
                         "${statBlock.genericName(true)} can innately cast the following spells, requiring no material components:")
                 }
-                SpellBlock(statBlock.name, trait.spellsWithLimit, ::innateLabel)
+                trait.spellsWithLimit[0]?.let { SpellLine(innateLabel(0), statBlock.name, it) }
+                trait.spellsWithLimit[3]?.let { SpellLine(innateLabel(3), statBlock.name, it) }
+                trait.spellsWithLimit[2]?.let { SpellLine(innateLabel(2), statBlock.name, it) }
+                trait.spellsWithLimit[1]?.let { SpellLine(innateLabel(1), statBlock.name, it) }
             }
             is SpellListCasting -> {
                 if (expand) {
@@ -165,10 +170,17 @@ fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expan
                         "(spell save DC ${8 + statBlock.modifierFor(trait.list.stat, true)}). " +
                         "${statBlock.genericName(true)} has the following ${trait.list.display} spells prepared:")
                 }
-                SpellBlock(statBlock.name, trait.spellsByLevel) { level ->
-                    when (level) {
-                        0 -> "Cantrip"
-                        else -> "${count(level)} level (${plural(trait.level[level], "slot")})"
+                for (level in 0..9) {
+                    val slots = if (level == 0) 0 else trait.level[level]
+                    val spells = trait.spellsByLevel[level].orEmpty()
+                    val label = when (level) {
+                        0 -> if (spells.size > 1) "Cantrips" else "Cantrip"
+                        else -> "${count(level)} level (${plural(slots, "slot")})"
+                    }
+                    if (spells.isNotEmpty()) {
+                        SpellLine(label, statBlock.name, spells)
+                    } else if (slots > 0) {
+                        TextLine(label, style = LocalTextStyle.current.copy(fontStyle = FontStyle.Italic))
                     }
                 }
             }
@@ -177,37 +189,33 @@ fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expan
 }
 
 @Composable
-private fun SpellBlock(creatureName: String, spells: Map<Int, List<StatblockSpell>>, label: (Int) -> String) {
-    spells.forEach { (key, value) ->
-        if (value.isNotEmpty()) {
-            RichText(rememberRichString(value) {
-                append(label(key), SpanStyle(fontStyle = FontStyle.Italic))
-                append(": ")
+private fun SpellLine(label: String, creatureName: String, spells: List<StatblockSpell>) {
+    RichText(rememberRichString(spells) {
+        append(label, SpanStyle(fontStyle = FontStyle.Italic))
+        append(": ")
 
-                value.forEachIndexed { index, spell ->
-                    spell.resolve()?.let {
-                        @OptIn(ExperimentalFoundationApi::class)
-                        withTooltip(index.toString(), Tooltip { SpellDetail(it) }) {
-                            if (it.damage != null) {
-                                clickableText(spell.name, index.toString()) {
-                                    log(LogEntry.Roll(spell.name, creatureName, it.damage.roll()))
-                                }
-                            } else {
-                                append(spell.name)
-                            }
+        spells.forEachIndexed { index, spell ->
+            spell.resolved?.let {
+                withTooltip(index.toString(), Tooltip { SpellDetail(it) }) {
+                    // TODO improve spell parsing & support cantrip damage and attack rolls
+                    if (it.damage != null) {
+                        clickableText(spell.displayName, index.toString()) {
+                            log(LogEntry.Roll(spell.displayName, creatureName, it.damage.roll()))
                         }
-                        if (spell.comment.isNotBlank()) {
-                            append(" ")
-                            append(spell.comment, SpanStyle(fontStyle = FontStyle.Italic))
-                        }
-                        if (index + 1 != value.size) {
-                            append(", ")
-                        }
+                    } else {
+                        append(spell.displayName)
                     }
                 }
-            })
+                if (spell.comment.isNotBlank()) {
+                    append(" ")
+                    append(spell.comment, SpanStyle(fontStyle = FontStyle.Italic))
+                }
+                if (index != spells.lastIndex) {
+                    append(", ")
+                }
+            }
         }
-    }
+    })
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -235,12 +243,6 @@ fun SpellDisplay(
     }
 }
 
-fun spellClickable(spell: Spell, creatureName: String): Modifier {
-    val damage = spell.damage ?: return Modifier
-    // TODO fix spell parsing & support cantrip damage and attack rolls
-    return Modifier.clickable { log(LogEntry.Roll(spell.name, creatureName, damage.roll())) }
-}
-
 private inline fun AnnotatedString.Builder.appendIf(condition: Boolean, text: () -> String): AnnotatedString.Builder {
     if (condition) append(text())
     return this
@@ -252,7 +254,8 @@ fun SpellDetail(spell: Spell, maxWidth: Dp = 600.dp) {
         TextLine(spell.name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
         TextLine("${spell.school.display} ${spell.type}")
         Text("Components: ${spell.components}")
-        TextLine("${spell.time}, range ${spell.range}, duration ${spell.duration}")
+        Text(spell.time)
+        TextLine("Range ${spell.range}, duration ${spell.duration}")
         Text(spell.text.filterIsInstance<SpellText.Text>().joinToString("\n") { it.text })
     }
 }
@@ -281,7 +284,7 @@ private fun AbilityBlock(
 private fun TraitBlock(label: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Column {
-            TextLine(label, style = MaterialTheme.typography.h6)
+            TextLine(label, style = MaterialTheme.typography.titleLarge)
             HorizontalDivider()
         }
         content()
@@ -299,43 +302,52 @@ private fun Ability(statBlock: StatBlock, ability: Ability) {
 @Composable
 fun Attack(statBlock: StatBlock, attack: Ability.Attack, expand: Boolean = true, addToName: String = "") {
     val name = attack.name
-    val rangeText = listOfNotNull(
-        attack.reach?.let { "reach $it ft." },
-        attack.range?.let {
-            var text = "range $it"
-            attack.longRange?.let { lr -> if (lr != it) text += "/$lr" }
-            text += " ft."
-            text
-        }
-    ).joinToString(" or ")
     val modifier = statBlock.modifierFor(attack.stat, true) + attack.modifier
     val damage = attack.damage + statBlock.modifierFor(attack.stat, false)
-    FlowRow {
+    val positionProvider = rememberCursorPositionProvider(DpOffset(0.dp, -32.dp), Alignment.TopCenter)
+    RichText(rememberRichString(attack, addToName, expand) {
         val attackRoll = MultiDice.D20 + modifier
-        TextLine("$name$addToName${attack.costDisplay()}:", Modifier.clickable {
+        clickableText("$name$addToName", "title", SpanStyle(fontWeight = FontWeight.Bold)) {
             log(LogEntry.Attack(statBlock.name, name, attackRoll.roll(), attackRoll.roll(), damage))
-        }, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
-//        TextLine(" $type, ", style = style)
-        Roller("${modifier(modifier)} to hit, ", attackRoll, statBlock.name, name)
-        TextLine("$rangeText ")
-//        TextLine("${attack.target}. ")
-        val hitText = "Hit: ${damage.asString()} damage"
-        if (attack.extra.isNotBlank() && expand) {
-            Roller("$hitText, ", damage, statBlock.name, "$name damage", LocalTextStyle.current, false)
-            Text(attack.extra)
-        } else if (attack.extra.isNotBlank()) {
-            TooltipText("$hitText, ${attack.extra}") {
-                Roller(hitText, damage, statBlock.name, "$name damage", LocalTextStyle.current, false)
-            }
-        } else {
-            Roller(hitText, damage, statBlock.name, "$name damage", LocalTextStyle.current, false)
         }
-    }
+        if ((attack.legendaryCost ?: 0) > 1) {
+            append(" ")
+            append(attack.costDisplay())
+        }
+        if (attack.use is Use.Limited) {
+            append(" ")
+            append(attack.use.display)
+        }
+        append(": ")
+        clickableText("${modifier(modifier)} to hit", "attack") {
+            log(LogEntry.Roll(name, statBlock.name, attackRoll.roll(), attackRoll.roll()))
+        }
+        append(", ")
+        append(attack.rangeDisplay())
+        append(" ")
+        val hitText = "Hit: ${damage.asString()} damage"
+        fun appendToHit() {
+            clickableText(hitText, "hit") {
+                log(LogEntry.Roll("$name damage", statBlock.name, damage.roll()))
+            }
+        }
+        if (attack.extra.isBlank()) {
+            appendToHit()
+        } else if (expand) {
+            appendToHit()
+            append("\n")
+            append((attack.extra))
+        } else {
+            withTooltip("tooltip", Tooltip(positionProvider = positionProvider) { TextLine(attack.extra, tooltipModifier()) }) {
+                appendToHit()
+            }
+        }
+    })
 }
 
 @Composable
 fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, addToName: String = "") {
-    val name = ability.name + addToName + ability.costDisplay()
+    val name = ability.name + addToName
     if (expand) {
         RichText(rememberRichString(ability, addToName) {
             if (ability.roll == null) {
@@ -344,6 +356,10 @@ fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, 
                 clickableText(name, "title", SpanStyle(fontWeight = FontWeight.Bold)) {
                     log(LogEntry.Roll(name, statBlock.name, ability.roll.roll()))
                 }
+            }
+            if ((ability.legendaryCost ?: 0) > 1) {
+                append(" ")
+                append(ability.costDisplay())
             }
             if (ability.use is Use.Limited) {
                 append(" ")

@@ -6,7 +6,12 @@ import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.norr.*
 import org.hertsig.dnd.norr.spell.Spellcasting
+import org.hertsig.dnd.norr.spell.one
+import org.hertsig.dnd.norr.spell.three
+import org.hertsig.dnd.norr.spell.two
 import org.hertsig.logger.logger
+import org.hertsig.magic.getAll
+import org.hertsig.util.applyIf
 import org.hertsig.util.distinctByKeepLast
 import java.util.*
 
@@ -70,10 +75,12 @@ data class Abilities(
 private fun Monster.analyzeAbilities(): Abilities {
     val (bonusTraits, traits) = trait().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
     val (bonusActions, actions) = action().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
+    val (variantBonusActions, variantActions) = variant().map { it.parseAbility(this) }.split { it.mightBeBonusAction() }
     val bonus = bonus().map { it.parseAbility(this) }
     val reaction = reaction().map {it.parseAbility(this) }
     val legendary = legendary().map { it.parseLegendaryAbility(this) }
-    return Abilities(traits, actions, bonus + bonusTraits + bonusActions, reaction, legendary)
+    return Abilities(traits, actions + variantActions,
+        bonus + bonusActions + bonusTraits + variantBonusActions, reaction, legendary)
 }
 
 private fun Monster.analyzeSpellcasting() = spellcasting().flatMap {
@@ -93,9 +100,9 @@ private fun Spellcasting.analyzeInnateSpellcasting(): InnateSpellcasting? {
     if (will.isEmpty() && daily == null) return null
     val spells = mapOf(
         0 to will,
-        3 to daily?.threePerDayEach().orEmpty(),
-        2 to daily?.twoPerDayEach().orEmpty(),
-        1 to daily?.onePerDayEach().orEmpty(),
+        3 to daily?.three().orEmpty(),
+        2 to daily?.two().orEmpty(),
+        1 to daily?.one().orEmpty(),
     ).mapValues { (_, it) -> it.map(String::parseSpellNameTemplate) }
         .filterValues { it.isNotEmpty() }
     return InnateSpellcasting(name(), analyzeAbility(), spells)
@@ -203,7 +210,7 @@ private fun Monster.parseSpeed(): String {
 
 private fun Monster.parseLegendaryHeader(): Int {
     if (legendary().isEmpty()) return 0
-    val text = legendaryHeader().firstOrNull() ?: legendary().first().entries().first()
+    val text = legendaryHeader().firstOrNull() ?: legendary().first().entries().getAll<String>().first()
     return text.substringAfter("can take ").substringBefore(" legendary actions").toIntOrNull() ?: 3
 }
 
@@ -216,7 +223,17 @@ private fun Entry.parseLegendaryAbility(monster: Monster): Ability {
 private fun Entry.parseAbility(monster: Monster, name: String = name().orEmpty(), legendaryCost: Int? = null): Ability {
     val (parsedName, recharge) = parseRecharge(name)
     val (finalName, use) = parseUse(parsedName)
-    val text = entries().joinToString(" ")
+    val text = entries().getAll<String>().joinToString(" ")
+    if (type() == "variant") {
+        entries().getAll<Entry>().singleOrNull()?.let {
+            val variantAbility = parseAbility(monster)
+            val fullName = "Variant: ${variantAbility.name}"
+            return when (variantAbility) {
+                is Ability.Trait -> variantAbility.copy(fullName, description = text + variantAbility.description)
+                else -> variantAbility.baseCopy(fullName)
+            }
+        }
+    }
     log.trace("Parsing ability $finalName: $text")
     val (parsedText, templates) = text.parseNorrTemplate()
     val attack = templates.singleTypeOrNull<Template.Attack>()
@@ -273,9 +290,13 @@ private fun analyzeAttackStat(monster: Monster, toHit: Template.ToHit, stats: En
     return stats.firstOrNull { proficiencyBonus + monster.abilityModifier(it) == toHit.modifier }
 }
 
-private fun Ability.mightBeBonusAction() = when(this) {
-    is Ability.Trait -> description.contains("bonus action", ignoreCase = true)
-    is Ability.Attack -> extra.contains("bonus action", ignoreCase = true)
+private fun Ability.mightBeBonusAction(): Boolean {
+    val text = when(this) {
+        is Ability.Trait -> description
+        is Ability.Attack -> extra
+    }
+    return text.contains("bonus action", ignoreCase = true)
+            && !text.contains("takes a bonus action to", ignoreCase = true)
 }
 
 private fun Monster.abilityScore(stat: Stat) = when (stat) {

@@ -3,10 +3,10 @@ package org.hertsig.dnd.combat.page
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Checkbox
-import androidx.compose.material.CheckboxDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -36,7 +36,7 @@ fun InitiativeList(state: CombatState, modifier: Modifier = Modifier, showContro
         state.entries.forEach {
             val isCurrent = it == state.current
             Row(Modifier
-                .background(if (isCurrent) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.secondary, RoundedCornerShape(8.dp))
+                .background(if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary, RoundedCornerShape(8.dp)) // FIXME tertiary was secondaryVariant
                 .fillMaxWidth().padding(8.dp, 4.dp), Arrangement.SpaceBetween) {
                 var text = "%2d".format(it.initiative)
                 if (!playerView || it is CombatEntry.Simple) text += " — ${it.name}"
@@ -44,7 +44,7 @@ fun InitiativeList(state: CombatState, modifier: Modifier = Modifier, showContro
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (showControls) {
                         Checkbox(it.active, { _ -> state.toggleActive(it) }, Modifier.size(16.dp),
-                            colors = CheckboxDefaults.colors(MaterialTheme.colors.primary))
+                            colors = CheckboxDefaults.colors(MaterialTheme.colorScheme.primary))
                     } else if (!it.active) {
                         Icon(painterResource("/skull.svg"), "Unconscious", Modifier.size(16.dp))
                     }

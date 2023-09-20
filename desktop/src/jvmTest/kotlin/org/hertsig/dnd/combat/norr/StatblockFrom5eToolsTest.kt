@@ -169,7 +169,7 @@ class StatblockFrom5eToolsTest {
         assertEquals("Innate Spellcasting", innateTrait.name)
         assertEquals(5, innateTrait.spellsWithLimit[0]?.size)
         assertEquals(3, innateTrait.spellsWithLimit[1]?.size)
-        innateTrait.spellsWithLimit.flatMap { it.value }.forEach { assertNotNull(it.resolve(), "Was ${it.name}") }
+        innateTrait.spellsWithLimit.flatMap { it.value }.forEach { assertNotNull(it.resolved, "Was ${it.name}") }
 
         val listTrait = actual.spellcasting.singleType<SpellListCasting>()
         assertEquals("Spellcasting", listTrait.name)
@@ -202,7 +202,7 @@ class StatblockFrom5eToolsTest {
     private fun Map<*, List<StatblockSpell>>.assertResolvable() {
         values.forEach {
             it.forEach { spell ->
-                assertNotNull(spell.resolve(), "Was ${spell.name}")
+                assertNotNull(spell.resolved, "Was ${spell.name}")
             }
         }
     }

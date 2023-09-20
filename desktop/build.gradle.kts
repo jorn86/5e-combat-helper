@@ -6,12 +6,10 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(17)
     jvm {
         compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-                freeCompilerArgs += "-Xjvm-default=all" // allow MagicMap to handle default methods
-            }
+            kotlinOptions.freeCompilerArgs += "-Xjvm-default=all" // allow MagicMap to handle default methods
         }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
@@ -29,7 +27,9 @@ kotlin {
             dependencies {
                 api(project(":common"))
 
-                implementation(compose.desktop.currentOs)
+                implementation(compose.desktop.currentOs) {
+                    exclude("org.jetbrains.compose.material", "material")
+                }
 
                 implementation("com.fasterxml.jackson.core:jackson-core:2.14.1")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.1")

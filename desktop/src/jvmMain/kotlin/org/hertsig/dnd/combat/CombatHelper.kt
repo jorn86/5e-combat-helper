@@ -1,12 +1,10 @@
 package org.hertsig.dnd.combat
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,42 +38,48 @@ fun CombatHelper(state: AppState) {
 @Composable
 private fun TitleBar(state: AppState) {
     var page by state::page
+    @OptIn(ExperimentalMaterial3Api::class)
     TopAppBar({
-        TextLine("Combat helper — ${page.subtitle}", Modifier.padding(end = 400.dp), style = MaterialTheme.typography.h5)
+        SpacedRow {
+            TextLine("Combat helper — ${page.subtitle}", Modifier.padding(end = 400.dp), style = MaterialTheme.typography.headlineSmall)
 
-        ProvideTextStyle(MaterialTheme.typography.body1) {
-            var quickSpellLookup by remember { mutableStateOf<Spell?>(null) }
-            Autocompleter(
-                { if (it.isBlank()) emptyList() else findNorrSpells(it.trim()) },
-                Modifier.width(400.dp),
-                "Spell lookup",
-            ) { quickSpellLookup = getSpell(it) }
-            quickSpellLookup?.let {
-                Popup(object : PopupPositionProvider {
-                    override fun calculatePosition(
-                        anchorBounds: IntRect,
-                        windowSize: IntSize,
-                        layoutDirection: LayoutDirection,
-                        popupContentSize: IntSize
-                    ): IntOffset {
-                        return IntOffset((windowSize.width - popupContentSize.width) / 2, anchorBounds.bottom + 8)
+            ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
+                var quickSpellLookup by remember { mutableStateOf<Spell?>(null) }
+                Autocompleter(
+                    { if (it.isBlank()) emptyList() else findNorrSpells(it.trim()) },
+                    Modifier.width(400.dp),
+                    "Spell lookup",
+                ) { quickSpellLookup = getSpell(it) }
+                quickSpellLookup?.let {
+                    Popup(object : PopupPositionProvider {
+                        override fun calculatePosition(
+                            anchorBounds: IntRect,
+                            windowSize: IntSize,
+                            layoutDirection: LayoutDirection,
+                            popupContentSize: IntSize
+                        ): IntOffset {
+                            return IntOffset((windowSize.width - popupContentSize.width) / 2, anchorBounds.bottom + 8)
+                        }
+                    }, { quickSpellLookup = null }, focusable = true) {
+                        SpellDetail(it)
                     }
-                }, { quickSpellLookup = null }, focusable = true) {
-                    SpellDetail(it)
                 }
             }
         }
     }, actions = {
         Row(Modifier.padding(end = 16.dp), Arrangement.spacedBy(16.dp), Alignment.CenterVertically) {
             page.drawToolbarButtons(state)
-            VerticalDivider(MaterialTheme.colors.onPrimary.copy(alpha = dividerAlpha))
+            VerticalDivider(MaterialTheme.colorScheme.onPrimary.copy(alpha = dividerAlpha))
             BarButton(Icons.Default.GridView, page != Page.Overview) { page = Page.Overview }
 //            BarButton(Icons.Default.Build, page != Page.Encounters) { page = Page.Encounters }
             BarButton(Icons.Default.Shield, page != Page.PrepareCombat && page != Page.Combat) {
                 page = if (state.combat.current == null) Page.PrepareCombat else Page.Combat
             }
         }
-    })
+    }, colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary,
+        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary))
 }
 
 @Composable

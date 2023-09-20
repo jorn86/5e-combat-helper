@@ -41,13 +41,23 @@ interface SpellListLevel {
 }
 
 interface DailySpells {
+    @Magic("1")
+    fun onePerDay(): List<String>?
     @Magic("1e")
-    fun onePerDayEach(): List<String>
+    fun onePerDayEach(): List<String>?
+    @Magic("2")
+    fun twoPerDay(): List<String>?
     @Magic("2e")
-    fun twoPerDayEach(): List<String>
+    fun twoPerDayEach(): List<String>?
+    @Magic("3")
+    fun threePerDay(): List<String>?
     @Magic("3e")
-    fun threePerDayEach(): List<String>
+    fun threePerDayEach(): List<String>?
 }
+
+fun DailySpells.one() = onePerDay().orEmpty() + onePerDayEach().orEmpty()
+fun DailySpells.two() = twoPerDay().orEmpty() + twoPerDayEach().orEmpty()
+fun DailySpells.three() = threePerDay().orEmpty() + threePerDayEach().orEmpty()
 
 fun SpellList.all() = listOfNotNull(cantrips(), firstLevel(), secondLevel(), thirdLevel(), fourthLevel(), fifthLevel(), sixthLevel(), seventhLevel(), eighthLevel(), ninthLevel())
     .flatMap { it.spells() }

@@ -51,6 +51,8 @@ interface Monster {
     @Magic(elementType = Entry::class)
     fun trait(): List<Entry>
     @Magic(elementType = Entry::class)
+    fun variant(): List<Entry>
+    @Magic(elementType = Entry::class)
     fun action(): List<Entry>
     @Magic(elementType = Entry::class)
     fun bonus(): List<Entry>

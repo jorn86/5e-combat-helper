@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +28,7 @@ fun Log(logEntries: List<LogEntry>) {
     LaunchedEffect(logEntries.size) { listState.scrollToItem(logEntries.size) }
     ScrollableColumn(Modifier.width(300.dp), Arrangement.spacedBy(4.dp), state = listState) {
         items(logEntries) {
-            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colors.primaryVariant) {
+            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondary) { // FIXME was primaryVariant
                 Row(Modifier.fillMaxWidth().padding(8.dp, 4.dp)) {
                     when (it) {
                         is LogEntry.Text -> TextLine(it.text)
@@ -45,7 +45,7 @@ fun Log(logEntries: List<LogEntry>) {
 @Composable
 private fun RollEntry(roll: LogEntry.Roll) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        ProvideTextStyle(MaterialTheme.typography.h4) {
+        ProvideTextStyle(MaterialTheme.typography.headlineMedium) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
                 RollResult(roll.first, Modifier.sizeIn(minWidth = 70.dp))
                 roll.second?.let {
@@ -62,7 +62,7 @@ private fun RollEntry(roll: LogEntry.Roll) {
 @Composable
 private fun AttackEntry(attack: LogEntry.Attack) {
     Column(Modifier.fillMaxWidth(), Arrangement.spacedBy(2.dp), Alignment.CenterHorizontally) {
-        ProvideTextStyle(MaterialTheme.typography.h4) {
+        ProvideTextStyle(MaterialTheme.typography.headlineMedium) {
             Row(horizontalArrangement = Arrangement.SpaceAround) {
                 RollResult(attack.firstHit, Modifier.sizeIn(minWidth = 70.dp))
                 attack.secondHit?.let {
@@ -81,7 +81,7 @@ private fun AttackEntry(attack: LogEntry.Attack) {
                         SmallButton({ damage = critDamage.roll() }) { TextLine("Crit") }
                     }
                 } else {
-                    RollResult(it, style = MaterialTheme.typography.h5)
+                    RollResult(it, style = MaterialTheme.typography.headlineSmall)
                 }
             }
         }

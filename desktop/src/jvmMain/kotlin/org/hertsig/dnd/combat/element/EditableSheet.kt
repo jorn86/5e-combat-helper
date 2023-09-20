@@ -3,12 +3,12 @@ package org.hertsig.dnd.combat.element
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Checkbox
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -34,6 +34,8 @@ import org.hertsig.dnd.norr.bestiary.getAllFromBestiary
 import org.hertsig.dnd.norr.bestiary.updateStatBlock
 import org.hertsig.dnd.norr.spell.findNorrSpells
 import org.hertsig.util.display
+import org.hertsig.util.nullsFirst
+import org.hertsig.util.sortedBy
 import java.util.*
 
 @Composable
@@ -122,7 +124,7 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
                     BasicEditNumber(proficiencyBonus, 2, 9) { updated = updated.copy(proficiencyBonus = it) }
                 }
                 FormRow("Abilities") {
-                    ProvideTextStyle(MaterialTheme.typography.body2) {
+                    ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                         SpacedColumn(spacing = 2.dp) {
                             @Composable
                             fun EditAbilityScore(stat: Stat) {
@@ -214,7 +216,7 @@ private fun <E: Enum<E>> ProficiencyBlock(
     var show by showState
     FormRow(label) {
         FlowRow(mainAxisSpacing = 4.dp) {
-            ProvideTextStyle(MaterialTheme.typography.body2) {
+            ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                 proficiencies.forEach {
                     ProficiencyEntry(display(it)) { proficiencies.remove(it); save(proficiencies) }
                 }
@@ -256,11 +258,11 @@ private fun FormRow(
 private fun SpellcastingBlock(traits: MutableList<SpellcastingTrait>, updatedState: MutableState<StatBlock>) {
     Column {
         if (traits.isEmpty()) {
-            TextLine("Spellcasting", style = MaterialTheme.typography.h6)
+            TextLine("Spellcasting", style = MaterialTheme.typography.titleLarge)
             HorizontalDivider()
         }
         traits.forEachIndexed { index, it ->
-            TextLine(it.name, style = MaterialTheme.typography.h6)
+            TextLine(it.name, style = MaterialTheme.typography.titleLarge)
             HorizontalDivider()
             SpacedColumn {
                 when (it) {
@@ -323,9 +325,9 @@ private fun EditSpellListCasting(traits: MutableList<SpellcastingTrait>, trait: 
     } }
     FormRow("Class & level") {
         BasicDropdown(state.list, onUpdate = {
-            val updated = trait.updateList(it)
-            update(updated)
-            state.level.value = updated.level
+            val listUpdated = trait.updateList(it)
+            update(listUpdated)
+            state.level.value = listUpdated.level
         })
         val levels = when (state.list.value) {
             WARLOCK -> CasterLevel.WARLOCK
@@ -337,7 +339,7 @@ private fun EditSpellListCasting(traits: MutableList<SpellcastingTrait>, trait: 
         }) { it.display }
     }
     EditSpellList("Spells known", state.spells) {
-        update(trait.copy(spellsByLevel = it.orEmpty().groupBy { it.resolve()!!.level }.toSortedMap()))
+        update(trait.copy(spellsByLevel = it.orEmpty().groupBy { it.resolved!!.level }.toSortedMap()))
     }
 }
 
@@ -353,9 +355,9 @@ private fun EditSpellList(title: String, spells: MutableList<StatblockSpell>, up
                     { if (it.isBlank()) emptyList() else findNorrSpells(it.trim()) },
                     Modifier.weight(1f),
                     "Add new spell",
-                ) {
-                    spells.add(StatblockSpell(it))
-                    spells.sortBy { s -> s.name }
+                ) { name ->
+                    spells.add(StatblockSpell(name))
+                    spells.sortedBy(Spell.order.nullsFirst()) { it.resolved }
                     update(spells)
                 }
             }
@@ -370,10 +372,10 @@ private fun EditSpell(
     spell: StatblockSpell,
     update: (List<StatblockSpell>) -> Unit,
 ) {
-    ProvideTextStyle(MaterialTheme.typography.body2) {
+    ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
         SpacedRow {
             val comment = remember(spell) { mutableStateOf(spell.comment) }
-            SpellDisplay(spell.resolve()!!, tooltipModifier = Modifier.weight(1f))
+            SpellDisplay(spell.resolved!!, tooltipModifier = Modifier.weight(1f))
             BasicEditText(comment, Modifier.weight(1f), "(comment)") { spells[index] = spell.copy(comment = it); update(spells) }
             IconButton({ spells.removeAt(index); update(spells) }, Icons.Default.Close, iconSize = 16.dp)
         }
@@ -389,10 +391,10 @@ private fun AbilityBlock(
     val abilities = state[type]
 
     Column {
-        TextLine(type.display, style = MaterialTheme.typography.h6)
+        TextLine(type.display, style = MaterialTheme.typography.headlineSmall)
         HorizontalDivider()
         SpacedColumn(Modifier.padding(vertical = 4.dp)) {
-            ProvideTextStyle(MaterialTheme.typography.body2) {
+            ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                 abilities.forEachIndexed { index, _ -> EditSingleAbility(type, index, state, updatedState) }
             }
 
@@ -581,7 +583,7 @@ private fun EditRoll(initial: MultiDice?, modifier: Modifier = Modifier, width: 
     }
     if (error.isNotBlank()) {
         TooltipText(error) {
-            Icon(Icons.Default.Error, "Parse error", Modifier.size(16.dp), MaterialTheme.colors.error)
+            Icon(Icons.Default.Error, "Parse error", Modifier.size(16.dp), MaterialTheme.colorScheme.error)
         }
     }
 }

@@ -3,10 +3,10 @@ package org.hertsig.dnd.combat.page
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Checkbox
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +28,7 @@ import org.hertsig.util.display
 
 @Composable
 fun OverviewPage(statBlocks: List<StatBlock>, modifier: Modifier, active: StatBlock? = null) {
-    ProvideTextStyle(MaterialTheme.typography.body2) {
+    ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
         Column(modifier.padding(8.dp)) {
             val columns = remember { mutableStateOf((statBlocks.size / 3).coerceIn(2, 4)) }
             var expand by remember { mutableStateOf(true) }
@@ -48,10 +48,10 @@ fun OverviewPage(statBlocks: List<StatBlock>, modifier: Modifier, active: StatBl
 
 @Composable
 fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolean = true) {
-    val color = if (active) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.primary
+    val color = if (active) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
     Column(Modifier.border(2.dp, color, RoundedCornerShape(8.dp)).padding(8.dp, 4.dp)) {
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-            TextLine(statBlock.name, style = MaterialTheme.typography.h6)
+            TextLine(statBlock.name, style = MaterialTheme.typography.headlineSmall)
             TextLine(statBlock.type)
         }
 

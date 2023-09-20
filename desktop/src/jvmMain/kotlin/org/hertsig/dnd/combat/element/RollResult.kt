@@ -5,9 +5,9 @@ import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,8 +34,8 @@ fun RowScope.RollResult(
     suffix: String = ""
 ) {
     TooltipArea({
-        ProvideTextStyle(MaterialTheme.typography.body1) {
-            Row(Modifier.background(MaterialTheme.colors.background)) {
+        ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
+            Row(Modifier.background(MaterialTheme.colorScheme.background)) {
                 roll.rolls.forEach {
                     Column {
                         Row {
@@ -46,7 +46,7 @@ fun RowScope.RollResult(
                             TextLine(
                                 "${it.total} ${it.type}",
                                 Modifier.align(Alignment.CenterHorizontally).padding(2.dp),
-                                MaterialTheme.colors.onBackground,
+                                MaterialTheme.colorScheme.onBackground,
                             )
                         }
                     }
@@ -66,7 +66,7 @@ fun RowScope.RollResult(
         }
         text.append(" ")
         text.append(suffix)
-        RowTextLine(text.toAnnotatedString(), modifier, MaterialTheme.colors.onPrimary, style, TextAlign.Center)
+        RowTextLine(text.toAnnotatedString(), modifier, MaterialTheme.colorScheme.onPrimary, style, TextAlign.Center)
     }
 }
 
@@ -90,18 +90,18 @@ private fun Die(roll: DieRoll, size: Int) {
     val color = when (roll.result) {
         1 -> Color.Red
         roll.size -> Color.Green
-        else -> MaterialTheme.colors.onBackground
+        else -> MaterialTheme.colorScheme.onBackground
     }
     TextWithIcon(roll.result.toString(), icon, color)
 }
 
 @Composable
-private fun TextWithIcon(text: String, icon: Shape? = null, color: Color = MaterialTheme.colors.onBackground) {
+private fun TextWithIcon(text: String, icon: Shape? = null, color: Color = MaterialTheme.colorScheme.onBackground) {
     Box(Modifier.sizeIn(50.dp, 50.dp)
-            .border(1.dp, MaterialTheme.colors.secondaryVariant)
-            .background(MaterialTheme.colors.background)
+            .border(1.dp, MaterialTheme.colorScheme.tertiary)
+            .background(MaterialTheme.colorScheme.background)
             .padding(4.dp)
-            .ifNotNull(icon) { border(2.dp, MaterialTheme.colors.primaryVariant, it) }
+            .ifNotNull(icon) { border(2.dp, MaterialTheme.colorScheme.secondary, it) } // FIXME was primaryVariant
             .padding(4.dp), contentAlignment = Alignment.Center
     ) {
         TextLine(text, color = color)

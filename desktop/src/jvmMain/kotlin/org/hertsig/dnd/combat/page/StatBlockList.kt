@@ -2,7 +2,7 @@ package org.hertsig.dnd.combat.page
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,21 +25,21 @@ fun StatBlockList(
         var hideInvisible by remember { mutableStateOf(true) }
         Column(Modifier.padding(padding), Arrangement.spacedBy(4.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(hideInvisible, { hideInvisible = !hideInvisible }, colors = CheckboxDefaults.colors(MaterialTheme.colors.primary))
+                Checkbox(hideInvisible, { hideInvisible = !hideInvisible }, colors = CheckboxDefaults.colors(MaterialTheme.colorScheme.primary))
                 TextLine("Hide inactive")
             }
             BasicDropdown(state.statBlocks.orderState, Modifier.weight(1f))
             Button(
                 { state.page = Page.Edit(state.statBlocks.new()) },
                 Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondaryVariant),
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.tertiary),
             ) {
-                RowTextLine("Add...", style = MaterialTheme.typography.subtitle1)
+                RowTextLine("Add...", style = MaterialTheme.typography.titleMedium)
             }
         }
         ScrollableColumn(Modifier.width(250.dp), Arrangement.spacedBy(4.dp), padding) {
             items(state.statBlocks.visibleStatBlocks(!hideInvisible), { Key(it == active, it) }) {
-                val colors = MaterialTheme.colors
+                val colors = MaterialTheme.colorScheme
                 val isCurrent by remember { derivedStateOf { it == active } }
                 val backgroundColor by remember { derivedStateOf { if (isCurrent) colors.primary else colors.secondary } }
                 SmallButton(
@@ -59,7 +59,7 @@ fun StatBlockList(
                         it.name,
                         Modifier.weight(1f),
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.subtitle1
+                        style = MaterialTheme.typography.titleMedium
                     )
                     if (it.challengeRating != ChallengeRating.NONE) RowTextLine("  (${it.challengeRating.display})")
                 }
