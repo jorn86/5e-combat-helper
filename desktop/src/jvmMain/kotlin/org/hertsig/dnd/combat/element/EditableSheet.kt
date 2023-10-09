@@ -17,11 +17,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.flowlayout.FlowRow
-import org.hertsig.compose.autoFocus
 import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
+import org.hertsig.compose.util.autoFocus
 import org.hertsig.dnd.combat.Page
 import org.hertsig.dnd.combat.component.modifier
 import org.hertsig.dnd.combat.dto.*
@@ -51,7 +50,7 @@ fun EditableSheet(state: AppState, page: Page.Edit, modifier: Modifier = Modifie
         val type = remember { mutableStateOf(original.type) }
         val challengeRating = remember { mutableStateOf(original.challengeRating) }
         val proficiencyBonus = remember { mutableStateOf(original.proficiencyBonus) }
-        val stats = Stat.values().associateWith { remember { mutableStateOf(original.scores[it]) } }
+        val stats = Stat.entries.associateWith { remember { mutableStateOf(original.scores[it]) } }
         val armorClass = remember { mutableStateOf(original.armorClass) }
         val maxHitPoints = remember { mutableStateOf(original.maxHitPoints) }
         val conditionImmunities = remember { mutableStateOf(original.conditionImmunities) }
@@ -215,7 +214,8 @@ private fun <E: Enum<E>> ProficiencyBlock(
     val showState = remember { mutableStateOf(false) }
     var show by showState
     FormRow(label) {
-        FlowRow(mainAxisSpacing = 4.dp) {
+        @OptIn(ExperimentalLayoutApi::class)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                 proficiencies.forEach {
                     ProficiencyEntry(display(it)) { proficiencies.remove(it); save(proficiencies) }

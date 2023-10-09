@@ -37,7 +37,7 @@ fun StatBlockList(
                 RowTextLine("Add...", style = MaterialTheme.typography.titleMedium)
             }
         }
-        ScrollableColumn(Modifier.width(250.dp), Arrangement.spacedBy(4.dp), padding) {
+        ScrollableColumn(Modifier.width(250.dp), arrangement = Arrangement.spacedBy(4.dp), padding = padding) {
             items(state.statBlocks.visibleStatBlocks(!hideInvisible), { Key(it == active, it) }) {
                 val colors = MaterialTheme.colorScheme
                 val isCurrent by remember { derivedStateOf { it == active } }

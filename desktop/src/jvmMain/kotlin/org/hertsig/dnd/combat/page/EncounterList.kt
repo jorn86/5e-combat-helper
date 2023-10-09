@@ -27,7 +27,7 @@ fun EncounterList(state: AppState, modifier: Modifier) {
         ) {
             RowTextLine("Add...", style = MaterialTheme.typography.titleMedium)
         }
-        ScrollableColumn(Modifier.weight(1f), Arrangement.spacedBy(4.dp), PaddingValues(0.dp)) {
+        ScrollableColumn(Modifier.weight(1f), arrangement = Arrangement.spacedBy(4.dp), padding = PaddingValues(0.dp)) {
             items(encounters.encounters) {
                 val colors = MaterialTheme.colorScheme
                 val isCurrent by remember { derivedStateOf { it == active } }

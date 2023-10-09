@@ -26,7 +26,7 @@ private val log = logger {}
 fun Log(logEntries: List<LogEntry>) {
     val listState = rememberLazyListState()
     LaunchedEffect(logEntries.size) { listState.scrollToItem(logEntries.size) }
-    ScrollableColumn(Modifier.width(300.dp), Arrangement.spacedBy(4.dp), state = listState) {
+    ScrollableColumn(Modifier.width(300.dp), arrangement = Arrangement.spacedBy(4.dp), state = listState) {
         items(logEntries) {
             Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondary) { // FIXME was primaryVariant
                 Row(Modifier.fillMaxWidth().padding(8.dp, 4.dp)) {

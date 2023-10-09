@@ -8,8 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
-import org.hertsig.compose.autoFocus
 import org.hertsig.compose.component.*
+import org.hertsig.compose.util.autoFocus
 import org.hertsig.dnd.combat.dto.*
 import org.hertsig.dnd.combat.log
 import org.hertsig.dnd.dice.DieRoll

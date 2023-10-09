@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.flowlayout.FlowRow
 import org.hertsig.compose.component.BasicEditNumber
 import org.hertsig.compose.component.HorizontalDivider
 import org.hertsig.compose.component.RowTextLine
@@ -47,6 +46,7 @@ fun OverviewPage(statBlocks: List<StatBlock>, modifier: Modifier, active: StatBl
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolean = true) {
     val color = if (active) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
     Column(Modifier.border(2.dp, color, RoundedCornerShape(8.dp)).padding(8.dp, 4.dp)) {
@@ -61,14 +61,14 @@ fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolea
         TraitLine("Speed", statBlock.speed, singleLine = false)
 
         HorizontalDivider()
-        FlowRow(crossAxisSpacing = 2.dp) {
+        FlowRow(verticalArrangement = Arrangement.spacedBy(2.dp)) {
 //            TraitLine("Abilities", visible = true)
-            Stat.values().asList().displayForEach({ "${it.shortDisplay} ${statBlock.scores[it]}" }) { text, it ->
+            Stat.entries.displayForEach({ "${it.shortDisplay} ${statBlock.scores[it]}" }) { text, it ->
                 Roller(text, MultiDice.D20 + statBlock.modifierFor(it), statBlock.name, "${it.display} check")
             }
         }
         if (statBlock.proficientSaves.isNotEmpty()) {
-            FlowRow(crossAxisSpacing = 2.dp) {
+            FlowRow(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 TraitLine("Saving throws", visible = true)
                 statBlock.proficientSaves.displayForEach({ "${it.shortDisplay} ${modifier(statBlock.saveModifierFor(it))}" }) { text, it ->
                     Roller(text, MultiDice.D20 + statBlock.saveModifierFor(Stat.STRENGTH), statBlock.name, "${it.display} saving throw")

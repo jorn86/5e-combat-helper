@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
@@ -22,7 +21,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberCursorPositionProvider
-import com.google.accompanist.flowlayout.FlowRow
 import org.hertsig.compose.component.*
 import org.hertsig.compose.component.flow.ReorderStrategy
 import org.hertsig.compose.component.flow.ScrollableFlowColumn
@@ -85,6 +83,7 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 TraitLine("Speed", statBlock.speed, singleLine = false)
                 TraitLine("Senses", statBlock.displaySenses(), singleLine = false)
                 TraitLine("Languages", statBlock.languages)
+                @OptIn(ExperimentalLayoutApi::class)
                 FlowRow {
                     val allSkills = statBlock.allSkills
                     TraitLine("Skills", visible = allSkills.isNotEmpty())
@@ -376,6 +375,7 @@ fun Trait(statBlock: StatBlock, ability: Ability.Trait, expand: Boolean = true, 
         })
     } else {
         TooltipText(ability.description) {
+            @OptIn(ExperimentalLayoutApi::class)
             FlowRow {
                 AbilityName(ability, ability.roll, name, statBlock.name)
                 Use(ability.use)
