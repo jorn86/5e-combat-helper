@@ -62,7 +62,6 @@ fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolea
 
         HorizontalDivider()
         FlowRow(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-//            TraitLine("Abilities", visible = true)
             Stat.entries.displayForEach({ "${it.shortDisplay} ${statBlock.scores[it]}" }) { text, it ->
                 Roller(text, MultiDice.D20 + statBlock.modifierFor(it), statBlock.name, "${it.display} check")
             }
@@ -71,7 +70,7 @@ fun SmallStatBlock(statBlock: StatBlock, active: Boolean = false, expand: Boolea
             FlowRow(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 TraitLine("Saving throws", visible = true)
                 statBlock.proficientSaves.displayForEach({ "${it.shortDisplay} ${modifier(statBlock.saveModifierFor(it))}" }) { text, it ->
-                    Roller(text, MultiDice.D20 + statBlock.saveModifierFor(Stat.STRENGTH), statBlock.name, "${it.display} saving throw")
+                    Roller(text, MultiDice.D20 + statBlock.saveModifierFor(it), statBlock.name, "${it.display} saving throw")
                 }
             }
         }

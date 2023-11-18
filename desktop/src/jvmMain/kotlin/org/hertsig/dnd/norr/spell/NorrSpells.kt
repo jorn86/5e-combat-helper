@@ -6,7 +6,7 @@ import org.hertsig.dnd.combat.dto.shortDisplay
 import org.hertsig.dnd.norr.listNorrFiles
 import org.hertsig.dnd.norr.readJsonAsMap
 import org.hertsig.magic.magicMap
-import org.hertsig.util.sub
+import org.hertsig.util.slice
 import kotlin.io.path.name
 
 fun getNorrSpell(name: String) = index[name.lowercase()]
@@ -26,7 +26,7 @@ private fun load(): Map<String, Spells> = listNorrFiles("data/spells", "spells-*
     .associate {
         val data: Map<String, Any> = readJsonAsMap(it)
         val name = it.fileName.name
-        name.sub(7, -5) to magicMap(data)
+        name.slice(7, -5) to magicMap(data)
     }
 
 private fun parseToHit(spell: Spell) = when {

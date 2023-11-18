@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -21,8 +22,8 @@ fun StatBlockList(
     onClick: (StatBlock) -> Unit = { state.page = Page.Show(it) }
 ) {
     Column(Modifier.width(250.dp).padding(vertical = 8.dp), Arrangement.spacedBy(4.dp)) {
+        var hideInvisible by rememberSaveable { mutableStateOf(true) }
         val padding = PaddingValues(start = 8.dp, end = 12.dp)
-        var hideInvisible by remember { mutableStateOf(true) }
         Column(Modifier.padding(padding), Arrangement.spacedBy(4.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(hideInvisible, { hideInvisible = !hideInvisible }, colors = CheckboxDefaults.colors(MaterialTheme.colorScheme.primary))

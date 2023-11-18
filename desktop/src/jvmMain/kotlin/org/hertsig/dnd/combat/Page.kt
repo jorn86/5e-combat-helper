@@ -22,7 +22,7 @@ sealed interface Page {
     @Composable fun drawList(state: AppState)
     @Composable fun RowScope.drawPage(state: AppState)
 
-    object Overview: Page {
+    data object Overview: Page {
         @Composable
         override fun drawToolbarButtons(state: AppState) {
             BarButton(Icons.Default.Save) { state.statBlocks.save() }
@@ -88,7 +88,7 @@ sealed interface Page {
         }
     }
 
-    object Encounters: Page {
+    data object Encounters: Page {
         override val subtitle = "Encounter builder"
 
         @Composable
@@ -102,7 +102,7 @@ sealed interface Page {
         }
     }
 
-    object PrepareCombat: Page {
+    data object PrepareCombat: Page {
         override val subtitle = "Prepare combat"
 
         @Composable
@@ -124,7 +124,7 @@ sealed interface Page {
         }
     }
 
-    object Combat: Page {
+    data object Combat: Page {
         @Composable
         override fun drawToolbarButtons(state: AppState) {
             val statBlock = state.combat.current?.statBlock
@@ -138,7 +138,7 @@ sealed interface Page {
 
         @Composable
         override fun drawList(state: AppState) {
-//            InitiativeList(state.combat, Modifier.width(250.dp), showControls = true)
+            InitiativeList(state.combat, Modifier.width(250.dp), showControls = true)
         }
 
         @Composable

@@ -1,7 +1,7 @@
 package org.hertsig.dnd.combat.dto
 
 import org.hertsig.util.display
-import org.hertsig.util.sub
+import org.hertsig.util.slice
 
 enum class Stat {
     STRENGTH,
@@ -13,7 +13,7 @@ enum class Stat {
     ;
 }
 
-val Stat.shortDisplay get() = display.sub(end = 3)
+val Stat.shortDisplay get() = display.slice(end = 3)
 
 val StatBlock.scores get() = ScoresDelegate(this)
 val StatBlock.modifiers get() = ModsDelegate(this)

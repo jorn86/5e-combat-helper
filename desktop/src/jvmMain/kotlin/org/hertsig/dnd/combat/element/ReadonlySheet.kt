@@ -93,11 +93,11 @@ fun ReadonlySheet(statBlock: StatBlock, modifier: Modifier = Modifier) {
                 }
             }
 
-            SpellcastingBlock(statBlock)
             AbilityBlock("Traits", statBlock, statBlock.traits)
             AbilityBlock("Actions", statBlock, statBlock.actions)
             AbilityBlock("Bonus actions", statBlock, statBlock.bonusActions)
             AbilityBlock("Reactions", statBlock, statBlock.reactions)
+            SpellcastingBlock(statBlock)
             AbilityBlock("Legendary actions", statBlock, statBlock.legendaryActions) {
                 Text("${statBlock.genericName(true)} can take ${statBlock.legendaryActionUses} legendary actions, " +
                         "choosing from the options below. Only one legendary action can be used at a time and only at the end " +
@@ -157,10 +157,10 @@ fun SpellcastingTraitBlock(statBlock: StatBlock, trait: SpellcastingTrait, expan
                         "(spell save DC ${8 + statBlock.modifierFor(trait.stat, true)}). " +
                         "${statBlock.genericName(true)} can innately cast the following spells, requiring no material components:")
                 }
-                trait.spellsWithLimit[0]?.let { SpellLine(innateLabel(0), statBlock.name, it) }
-                trait.spellsWithLimit[3]?.let { SpellLine(innateLabel(3), statBlock.name, it) }
-                trait.spellsWithLimit[2]?.let { SpellLine(innateLabel(2), statBlock.name, it) }
-                trait.spellsWithLimit[1]?.let { SpellLine(innateLabel(1), statBlock.name, it) }
+                trait.spellsWithLimit[0]?.let { SpellLine(innateLabel(0, it.size == 1), statBlock.name, it) }
+                trait.spellsWithLimit[3]?.let { SpellLine(innateLabel(3, it.size == 1), statBlock.name, it) }
+                trait.spellsWithLimit[2]?.let { SpellLine(innateLabel(2, it.size == 1), statBlock.name, it) }
+                trait.spellsWithLimit[1]?.let { SpellLine(innateLabel(1, it.size == 1), statBlock.name, it) }
             }
             is SpellListCasting -> {
                 if (expand) {
@@ -249,18 +249,21 @@ private inline fun AnnotatedString.Builder.appendIf(condition: Boolean, text: ()
 
 @Composable
 fun SpellDetail(spell: Spell, maxWidth: Dp = 600.dp) {
-    Column(tooltipModifier(Color(0xfffafad0)).widthIn(max = maxWidth), Arrangement.spacedBy(4.dp)) {
-        TextLine(spell.name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
-        TextLine("${spell.school.display} ${spell.type}")
-        Text("Components: ${spell.components}")
-        Text(spell.time)
-        TextLine("Range ${spell.range}, duration ${spell.duration}")
-        Text(spell.text.filterIsInstance<SpellText.Text>().joinToString("\n") { it.text })
+    CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onBackground)) {
+        Column(tooltipModifier(Color(0xfffafad0)).widthIn(max = maxWidth), Arrangement.spacedBy(4.dp)) {
+            TextLine(spell.name, style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold))
+            TextLine("${spell.school.display} ${spell.type}")
+            Text("Components: ${spell.components}")
+            Text(spell.time)
+            TextLine("Range ${spell.range}, duration ${spell.duration}")
+            Text(spell.text.filterIsInstance<SpellText.Text>().joinToString("\n") { it.text })
+        }
     }
 }
 
-fun innateLabel(perDay: Int) = when (perDay) {
-    0 -> "At will"
+fun innateLabel(perDay: Int, single: Boolean = false) = when {
+    perDay == 0 -> "At will"
+    single -> "$perDay/day"
     else -> "$perDay/day each"
 }
 

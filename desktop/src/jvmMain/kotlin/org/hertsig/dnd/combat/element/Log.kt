@@ -71,7 +71,7 @@ private fun AttackEntry(attack: LogEntry.Attack) {
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().height(24.dp), Arrangement.SpaceAround) {
+        Row(Modifier.fillMaxWidth().height(28.dp), Arrangement.SpaceAround) {
             var damage by remember { mutableStateOf<MultiDieRolls?>(null) }
             damage.let {
                 if (it == null) {

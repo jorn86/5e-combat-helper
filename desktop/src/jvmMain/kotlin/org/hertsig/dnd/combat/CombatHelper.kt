@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import org.hertsig.compose.component.*
 import org.hertsig.dnd.combat.dto.AppState
 import org.hertsig.dnd.combat.dto.Spell
@@ -60,7 +61,7 @@ private fun TitleBar(state: AppState) {
                         ): IntOffset {
                             return IntOffset((windowSize.width - popupContentSize.width) / 2, anchorBounds.bottom + 8)
                         }
-                    }, { quickSpellLookup = null }, focusable = true) {
+                    }, { quickSpellLookup = null }) {
                         SpellDetail(it)
                     }
                 }

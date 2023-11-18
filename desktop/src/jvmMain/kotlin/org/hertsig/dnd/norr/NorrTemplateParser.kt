@@ -8,12 +8,12 @@ import org.hertsig.dnd.dice.Dice
 import org.hertsig.dnd.dice.MultiDice
 import org.hertsig.dnd.dice.parse
 import org.hertsig.logger.logger
-import org.hertsig.util.sub
+import org.hertsig.util.slice
 import java.util.*
 import java.util.regex.MatchResult
 
 private val log = logger {}
-private val templateRegex = Regex("\\{@(\\w+) (.+?)}")
+private val templateRegex = Regex("\\{@(?!note)(\\w+) (.+?)}") // FIXME remove hack to skip @note
 
 fun String.parseNorrTemplateText(replacement: (MatchResult) -> String = { templateValue(it).text }) =
     parseNorrTemplateText { it, _, _ -> replacement(it) }
@@ -36,7 +36,7 @@ fun String.parseNorrTemplate(): Pair<String, MutableList<Template>> {
         val template = templateValue(it)
         if (template is Template.Damage) {
             val nextSpace = this.indexOf(' ', matchEnd)
-            val type = if (nextSpace < 0) "" else this.sub(start = nextSpace + 1).substringBefore(' ', "")
+            val type = if (nextSpace < 0) "" else this.slice(start = nextSpace + 1).substringBefore(' ', "")
             templates.add(Template.DamageWithType(template.dice(type)))
             template.dice.asString(withType = false)
         } else {
@@ -66,7 +66,7 @@ sealed interface Template {
             ;
 
             companion object {
-                fun forText(text: String) = values().singleOrNull { it.text == text }
+                fun forText(text: String) = entries.singleOrNull { it.text == text }
                     ?: error("No attack type for $text")
             }
         }
@@ -106,18 +106,20 @@ sealed interface Template {
 @VisibleForTesting
 fun templateValue(match: MatchResult): Template {
     val text = match.group(2).split("|").map { it.trim() }.filter { it.isNotBlank() }
-    return when(val type = match.group(1)) {
+    return when (val type = match.group(1)) {
         "atk" -> Template.Attack(text.single().split(",").map(Template.Attack.Type::forText).toEnumSet())
         "book" -> Template.Other(type, text.first())
         "chance" -> Template.Other(type, text[1])
-        "condition" -> Template.Other(type, text.single())
+        "condition" -> Template.Other(type, text.last())
         "creature" -> Template.Other(type, text.last()) // TODO own implementation for linking?
         "damage" -> Template.Damage(parse(text.single()).singleUntyped())
         "dc" -> Template.DC(text.single().toInt())
         "dice" -> Template.Dice(parse(text.single()).singleUntyped())
+        "filter" -> Template.Other(type, text.first())
         "h" -> Template.Other(type, "")
         "hit" -> Template.ToHit(text.single().toInt())
         "item" -> Template.Other(type, text.first())
+        "note" -> Template.Other(type, match.group().slice(7)) // FIXME may contain templates itself, requires separate processing step for only notes
         "recharge" -> Template.Recharge(Recharge.forValue(text.single().toInt()))
         "quickref" -> when(text.size) {
             4 -> Template.Other(type, text.last())

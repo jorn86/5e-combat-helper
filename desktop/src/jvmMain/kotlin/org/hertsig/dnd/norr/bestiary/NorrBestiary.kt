@@ -3,7 +3,7 @@ package org.hertsig.dnd.norr.bestiary
 import org.hertsig.dnd.norr.listNorrFiles
 import org.hertsig.dnd.norr.readJsonAsMap
 import org.hertsig.magic.magicMap
-import org.hertsig.util.sub
+import org.hertsig.util.slice
 import kotlin.io.path.name
 
 fun getFromBestiary(name: String) = index[name.lowercase()]
@@ -21,6 +21,6 @@ private fun load(): Map<String, List<Monster>> {
     return listNorrFiles("data/bestiary", "bestiary-*.json").associate {
         val data = readJsonAsMap(it)
         val name = it.fileName.name
-        name.sub(9, -5) to magicMap<Bestiary>(data).monster()
+        name.slice(9, -5) to magicMap<Bestiary>(data).monster()
     }
 }

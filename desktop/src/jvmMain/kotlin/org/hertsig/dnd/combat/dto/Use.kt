@@ -13,7 +13,7 @@ sealed interface Use {
     }
 
     data class Limited(override val amount: Int, override val reset: String): Use {
-        override val display = " (${this})"
+        override val display = "(${this})"
         override fun toString() = "$amount/$reset"
     }
 

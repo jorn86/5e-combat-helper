@@ -7,6 +7,7 @@ class DiceSerializationTest {
     @Test
     fun parse() {
         assertEquals(MultiDice(Dice.NONE + 1), parse("1"))
+        assertEquals(MultiDice(Dice.NONE - 3), parse("-3"))
         assertEquals(MultiDice(Dice(listOf(), 15, "bludgeoning")), parse("15 bludgeoning"))
         assertEquals(MultiDice(Dice.D20), parse("1d20"))
         assertEquals((MultiDice(Dice.D20 + 12)), parse("1d20 + 12"))
@@ -18,6 +19,7 @@ class DiceSerializationTest {
 
     @Test
     fun asString() {
+        assertEquals("-3 (-3)", Dice(listOf(), -3).asString(true))
         assertEquals("1d20 (10)", Dice.D20.asString(true))
         assertEquals("1d20 + 4 (14)", (Dice.D20 + 4).asString(true))
         assertEquals("1d20 - 1 (9)", (Dice.D20 - 1).asString(true))
@@ -27,6 +29,7 @@ class DiceSerializationTest {
 
     @Test
     fun asStringWithoutAverage() {
+        assertEquals("-3", Dice(listOf(), -3).asString(false))
         assertEquals("1d20", Dice.D20.asString(false))
         assertEquals("1d20 + 12", (Dice.D20 + 12).asString(false))
         assertEquals("1d20 - 1", (Dice.D20 - 1).asString(false))
